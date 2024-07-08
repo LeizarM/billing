@@ -1,5 +1,5 @@
-import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -19,15 +19,17 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 4,
       onCreate: _createDB,
+      onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _createDB(Database db, int version) async {
     await db.execute('''
     CREATE TABLE productos (
-      codArticulo TEXT PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      codArticulo TEXT,
       datoArt TEXT,
       listaPrecio INTEGER,
       precio REAL,
@@ -43,19 +45,107 @@ class DatabaseHelper {
       db TEXT
     )
     ''');
+
+    await db.execute('''
+    CREATE UNIQUE INDEX idx_producto_unique 
+    ON productos (codArticulo, listaPrecio, db, codCiudad)
+    ''');
   }
 
   Future<void> upsertProductos(List<Map<String, dynamic>> productos) async {
     final db = await database;
     await db.transaction((txn) async {
+      // Obtener todos los códigos de artículos existentes en la base de datos
+      final existingCodes = await txn.query('productos',
+          columns: ['codArticulo', 'listaPrecio', 'db', 'codCiudad']);
+      final existingSet = Set<String>.from(existingCodes.map((e) =>
+          '${e['codArticulo']}_${e['listaPrecio']}_${e['db']}_${e['codCiudad']}'));
+
+      // Set para almacenar los códigos que vienen de la API
+      final apiSet = <String>{};
+
       for (var producto in productos) {
-        await txn.insert(
+        final key =
+            '${producto['codArticulo']}_${producto['listaPrecio']}_${producto['db']}_${producto['codCiudad']}';
+        apiSet.add(key);
+
+        try {
+          // Intentar insertar el producto
+          await txn.insert(
+            'productos',
+            producto,
+            conflictAlgorithm: ConflictAlgorithm.ignore,
+          );
+
+          // Si la inserción falla (porque ya existe), actualizamos
+          await txn.update(
+            'productos',
+            {
+              'precio': producto['precio'],
+              'disponible': producto['disponible'],
+              // Añade aquí otros campos que quieras actualizar
+            },
+            where:
+                'codArticulo = ? AND listaPrecio = ? AND db = ? AND codCiudad = ?',
+            whereArgs: [
+              producto['codArticulo'],
+              producto['listaPrecio'],
+              producto['db'],
+              producto['codCiudad']
+            ],
+          );
+        } catch (e) {
+          print('Error al procesar producto: $e');
+        }
+      }
+
+      // Eliminar productos que ya no existen en la API
+      final toDelete = existingSet.difference(apiSet);
+      for (var key in toDelete) {
+        final parts = key.split('_');
+        await txn.delete(
           'productos',
-          producto,
-          conflictAlgorithm: ConflictAlgorithm.replace,
+          where:
+              'codArticulo = ? AND listaPrecio = ? AND db = ? AND codCiudad = ?',
+          whereArgs: [parts[0], parts[1], parts[2], parts[3]],
         );
       }
     });
-    print('${productos.length} productos insertados o actualizados en la base de datos');
+  }
+
+  //Para obtener los items desde sqflite
+  Future<List<Map<String, dynamic>>> getItems() async {
+    final db = await database;
+    return await db.query('productos');
+  }
+
+  //Para obtener los datos de la base de datos sqlflite
+  Future<List<Map<String, dynamic>>> getItemsPaginated(
+      int offset, int limit) async {
+    final db = await database;
+    return await db.query(
+      'productos',
+      limit: limit,
+      offset: offset,
+      orderBy: 'datoArt ASC',
+    );
+  }
+
+  //para filtrar los datos por descripcion o codigo
+  Future<List<Map<String, dynamic>>> searchItems(String query) async {
+    final db = await database;
+    return await db.query(
+      'productos',
+      where: 'codArticulo LIKE ? OR datoArt LIKE ?',
+      whereArgs: ['%$query%', '%$query%'],
+      orderBy: 'datoArt ASC',
+    );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 4) {
+      await db.execute('DROP TABLE IF EXISTS productos');
+      await _createDB(db, newVersion);
+    }
   }
 }

@@ -7,8 +7,10 @@ import '../sync/sync_service.dart';
 
 class AuthService implements AuthRepository {
   final Dio _dio = Dio();
+  Login? _userData;
 
-  final String _baseUrl ='http://10.11.9.148:9223/auth'; // Reemplaza con la URL de tu API
+  final String _baseUrl =
+      'http://192.168.3.107:9223/auth'; // Reemplaza con la URL de tu API
 
   final SyncService _syncService = SyncService();
 
@@ -24,7 +26,6 @@ class AuthService implements AuthRepository {
         '$_baseUrl/login/',
         data: {'login': username, 'password2': password},
       );
-      print(response.data);
 
       if (response.data is Map<String, dynamic>) {
         final login = Login.fromJson(response.data);
@@ -32,8 +33,10 @@ class AuthService implements AuthRepository {
         // Guardar usuario en el almacenamiento local
         await _localStorageService.saveUser(login);
 
+        _userData = await _localStorageService.getUser();
+
         // Iniciar sincronización después del login exitoso
-        await _syncService.syncProductos(login.token);
+        await _syncService.syncProductos(login.token, _userData!.codCiudad);
 
         return login;
       } else {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../application/auth/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -7,43 +8,43 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final AuthService _authService = AuthService();
-  
+
   bool _obscureText = true;
   bool _isLoading = false;
 
   void _login() async {
-  if (_formKey.currentState!.validate()) {
-    setState(() {
-      _isLoading = true;
-    });
-    try {
-      final login = await _authService.login(
-        _usernameController.text,
-        _passwordController.text,
-      );
-      // Navegar al Dashboard después del login exitoso
-      Navigator.of(context).pushReplacementNamed('/dashboard');
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-       SnackBar(
-          content: Text('Login fallido: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+      try {
+        final login = await _authService.login(
+          _usernameController.text,
+          _passwordController.text,
+        );
+        // Navegar al Dashboard después del login exitoso
+        Navigator.of(context).pushReplacementNamed('/dashboard');
+      } catch (e) {
+        print(e.toString());
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Login fallido: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +93,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscureText ? Icons.visibility : Icons.visibility_off,
+                          _obscureText
+                              ? Icons.visibility
+                              : Icons.visibility_off,
                         ),
                         onPressed: () {
                           setState(() {

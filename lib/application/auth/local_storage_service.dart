@@ -1,8 +1,8 @@
-
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../domain/auth/login.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../domain/auth/login.dart';
 
 class LocalStorageService {
   static const String USER_KEY = 'user_data';
@@ -15,6 +15,7 @@ class LocalStorageService {
   Future<Login?> getUser() async {
     final prefs = await SharedPreferences.getInstance();
     final userJson = prefs.getString(USER_KEY);
+    print(userJson);
     if (userJson != null) {
       return Login.fromJson(jsonDecode(userJson));
     }
