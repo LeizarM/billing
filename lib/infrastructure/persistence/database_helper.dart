@@ -1,74 +1,48 @@
-import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
 
 class DatabaseHelper {
-  static final DatabaseHelper _instance = DatabaseHelper._internal();
+  static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
 
-  factory DatabaseHelper() => _instance;
-
-  DatabaseHelper._internal();
+  DatabaseHelper._init();
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDatabase();
+    _database = await _initDB('productos.db');
     return _database!;
   }
 
-  Future<Database> _initDatabase() async {
-    String path = join(await getDatabasesPath(), 'app_database.db');
+  Future<Database> _initDB(String filePath) async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, filePath);
+
     return await openDatabase(
       path,
-      version: 2,
-      onCreate: _createTables,
-      onUpgrade: _onUpgrade,
+      version: 1,
+      onCreate: _createDB,
     );
   }
 
-  Future<void> _createTables(Database db, int version) async {
+  Future<void> _createDB(Database db, int version) async {
     await db.execute('''
-      CREATE TABLE users(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT,
-        token TEXT
-      )
+    CREATE TABLE productos (
+      codArticulo TEXT PRIMARY KEY,
+      datoArt TEXT,
+      listaPrecio INTEGER,
+      precio REAL,
+      moneda TEXT,
+      gramaje REAL,
+      codigoFamilia TEXT,
+      disponible INTEGER,
+      unidadMedida TEXT,
+      codCiudad INTEGER,
+      codGrpFamiliaSap TEXT,
+      ruta TEXT,
+      audUsuario INTEGER,
+      db TEXT
+    )
     ''');
-
-    await db.execute('''
-      CREATE TABLE items(
-        codArticulo TEXT PRIMARY KEY,
-        datoArt TEXT,
-        listaPrecio INTEGER,
-        precio REAL,
-        moneda TEXT,
-        codigoFamilia TEXT,
-        disponible INTEGER,
-        unidadMedida TEXT,
-        codGrupoFamiliaSap TEXT,
-        ruta TEXT,
-        db TEXT
-      )
-    ''');
-  }
-
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      await db.execute('''
-        CREATE TABLE productos(
-          codArticulo TEXT PRIMARY KEY,
-          datoArt TEXT,
-          listaPrecio INTEGER,
-          precio REAL,
-          moneda TEXT,
-          codigoFamilia TEXT,
-          disponible INTEGER,
-          unidadMedida TEXT,
-          codGrupoFamiliaSap TEXT,
-          ruta TEXT,
-          db TEXT
-        )
-      ''');
-    }
   }
 
   Future<void> upsertProductos(List<Map<String, dynamic>> productos) async {
@@ -82,5 +56,6 @@ class DatabaseHelper {
         );
       }
     });
+    print('${productos.length} productos insertados o actualizados en la base de datos');
   }
 }
