@@ -1,3 +1,4 @@
+import 'package:billing/presentation/auth/change_password_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../../application/auth/auth_service.dart';
@@ -26,8 +27,16 @@ class _LoginScreenState extends State<LoginScreen> {
           _usernameController.text,
           _passwordController.text,
         );
-        // Navegar al Dashboard después del login exitoso
-        Navigator.of(context).pushReplacementNamed('/dashboard');
+
+        if (await _authService.isDefaultPassword(_passwordController.text)) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => ChangePasswordScreen(isForced: true),
+            ),
+          );
+        } else {
+          Navigator.of(context).pushReplacementNamed('/dashboard');
+        }
       } catch (e) {
         print(e.toString());
         ScaffoldMessenger.of(context).showSnackBar(

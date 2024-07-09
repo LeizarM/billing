@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class ItemDetailScreen extends StatelessWidget {
   final List<Map<String, dynamic>> items;
@@ -105,6 +106,9 @@ class ItemDetailScreen extends StatelessWidget {
     final unidadMedida = companyItems.first['unidadMedida'];
     companyItems.sort((a, b) => b['listaPrecio'].compareTo(a['listaPrecio']));
 
+    // Crea un formateador de números
+    final numberFormat = NumberFormat('#,##0.00');
+
     return Card(
       elevation: 4,
       margin: const EdgeInsets.only(bottom: 16),
@@ -118,14 +122,28 @@ class ItemDetailScreen extends StatelessWidget {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const Divider(),
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Lista de Precios',
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text('Precio',
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 8),
             ...companyItems.map((item) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Lista ${item['listaPrecio']}'),
-                      Text('${item['precio']} ${item['moneda']}',
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        '${numberFormat.format(item['precio'])} ${item['moneda']}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ],
                   ),
                 )),

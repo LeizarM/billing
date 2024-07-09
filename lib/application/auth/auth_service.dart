@@ -10,8 +10,8 @@ class AuthService implements AuthRepository {
   Login? _userData;
 
   final String _baseUrl =
-      'http://192.168.3.107:9223/auth'; // Reemplaza con la URL de tu API
-
+      //'http://200.105.169.35:7000/auth'; // Reemplaza con la URL de tu API
+      'http://192.168.3.107:9223/auth';
   final SyncService _syncService = SyncService();
 
   final LocalStorageService _localStorageService = LocalStorageService();
@@ -19,8 +19,6 @@ class AuthService implements AuthRepository {
   @override
   Future<Login> login(String username, String password) async {
     try {
-      print('$_baseUrl/login/');
-
       _dio.options.headers['Content-Type'] = 'application/json';
       final response = await _dio.post(
         '$_baseUrl/login/',
@@ -53,13 +51,29 @@ class AuthService implements AuthRepository {
         throw Exception('An error occurred: ${e.message}');
       }
     } catch (e) {
-      print(e.toString());
       throw Exception('An unexpected error occurred: $e');
+    }
+  }
+
+  Future<bool> isDefaultPassword(String password) async {
+    return password == '123456789';
+  }
+
+  Future<void> changePassword(String newPassword) async {
+    try {
+      final token = await _localStorageService.getToken();
+      await _dio.post(
+        '$_baseUrl/changePassword',
+        data: {'newPassword': newPassword},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    } catch (e) {
+      throw Exception('Failed to change password: $e');
     }
   }
 
   @override
   Future<void> logout() async {
-    //
+    await _localStorageService.clearUser();
   }
 }

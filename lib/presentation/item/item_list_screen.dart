@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:billing/presentation/item_detail/item_detail_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -13,11 +15,28 @@ class _ItemScreenState extends State<ItemsScreen> {
   List<Map<String, dynamic>> _items = [];
   bool _isLoading = false;
   final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
     _loadItems();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 1000), () {
+      _searchItems(_searchController.text);
+    });
   }
 
   Future<void> _loadItems() async {
@@ -49,8 +68,7 @@ class _ItemScreenState extends State<ItemsScreen> {
     final groupedItems = _items.fold<Map<String, Map<String, dynamic>>>(
       {},
       (map, item) {
-        final codArticulo =
-            item['codArticulo'].toString(); // Convertimos a String
+        final codArticulo = item['codArticulo'].toString();
         if (!map.containsKey(codArticulo)) {
           map[codArticulo] = item;
         }
@@ -70,15 +88,11 @@ class _ItemScreenState extends State<ItemsScreen> {
               controller: _searchController,
               decoration: InputDecoration(
                 labelText: 'Buscar por código o nombre',
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.search),
-                  onPressed: () => _searchItems(_searchController.text),
-                ),
+                suffixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              onSubmitted: _searchItems,
             ),
           ),
           Expanded(
@@ -120,11 +134,5 @@ class _ItemScreenState extends State<ItemsScreen> {
         tooltip: 'Recargar items',
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 }
