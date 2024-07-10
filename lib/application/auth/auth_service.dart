@@ -59,12 +59,17 @@ class AuthService implements AuthRepository {
     return password == '123456789';
   }
 
-  Future<void> changePassword(String newPassword) async {
+  Future<void> changePassword(String nPassword) async {
+    final token = await _localStorageService.getToken();
+    final codUsuario = await _localStorageService.getCodUsuario();
+
     try {
-      final token = await _localStorageService.getToken();
       await _dio.post(
-        '$_baseUrl/changePassword',
-        data: {'newPassword': newPassword},
+        '$_baseUrl/changePasswordDefault',
+        data: {
+          'npassword': nPassword,
+          'codUsuario': codUsuario,
+        },
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
     } catch (e) {

@@ -1,7 +1,7 @@
-import 'package:billing/presentation/auth/change_password_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../../application/auth/auth_service.dart';
+import 'change_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -19,9 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _login() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+      setState(() => _isLoading = true);
       try {
         final login = await _authService.login(
           _usernameController.text,
@@ -29,16 +27,17 @@ class _LoginScreenState extends State<LoginScreen> {
         );
 
         if (await _authService.isDefaultPassword(_passwordController.text)) {
+          if (!mounted) return;
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (context) => ChangePasswordScreen(isForced: true),
+              builder: (context) => const ChangePasswordScreen(isForced: true),
             ),
           );
         } else {
+          if (!mounted) return;
           Navigator.of(context).pushReplacementNamed('/dashboard');
         }
       } catch (e) {
-        print(e.toString());
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Login fallido: ${e.toString()}'),
@@ -47,9 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       } finally {
         if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
+          setState(() => _isLoading = false);
         }
       }
     }
@@ -58,104 +55,155 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'Bienvenido',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 48),
-                  TextFormField(
-                    controller: _usernameController,
-                    decoration: InputDecoration(
-                      labelText: 'Usuario',
-                      prefixIcon: const Icon(Icons.person),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor ingrese su usuario';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscureText,
-                    decoration: InputDecoration(
-                      labelText: 'Contraseña',
-                      prefixIcon: const Icon(Icons.lock),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureText
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscureText = !_obscureText;
-                          });
-                        },
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor ingrese su contraseña';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _login,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16.0),
-                      child: _isLoading
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Theme.of(context).colorScheme.onPrimary,
-                                ),
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Text(
-                              'Iniciar sesión',
-                              style: TextStyle(fontSize: 18),
-                            ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ],
+      body: Stack(
+        children: [
+          // Fondo con gradiente
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.blue.shade800, Colors.blue.shade400],
               ),
             ),
           ),
-        ),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Logo o icono de la app
+                    Icon(
+                      Icons.account_balance,
+                      size: 80,
+                      color: Colors.white,
+                    ),
+                    SizedBox(height: 48),
+                    // Título de bienvenida
+                    Text(
+                      'Bienvenido',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 48),
+                    // Formulario de login
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          // Campo de usuario
+                          _buildTextField(
+                            controller: _usernameController,
+                            icon: Icons.person,
+                            hintText: 'Usuario',
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor ingrese su usuario';
+                              }
+                              return null;
+                            },
+                          ),
+                          SizedBox(height: 16),
+                          // Campo de contraseña
+                          _buildTextField(
+                            controller: _passwordController,
+                            icon: Icons.lock,
+                            hintText: 'Contraseña',
+                            obscureText: _obscureText,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor ingrese su contraseña';
+                              }
+                              return null;
+                            },
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscureText
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                                color: Colors.white70,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscureText = !_obscureText;
+                                });
+                              },
+                            ),
+                          ),
+                          SizedBox(height: 24),
+                          // Botón de inicio de sesión
+                          ElevatedButton(
+                            onPressed: _isLoading ? null : _login,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 48, vertical: 16),
+                              child: _isLoading
+                                  ? SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Colors.blue.shade800),
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Text(
+                                      'Iniciar sesión',
+                                      style: TextStyle(fontSize: 18),
+                                    ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.blue.shade800,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required IconData icon,
+    required String hintText,
+    required String? Function(String?) validator,
+    bool obscureText = false,
+    Widget? suffixIcon,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      style: TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: Colors.white70),
+        hintText: hintText,
+        hintStyle: TextStyle(color: Colors.white70),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.1),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: BorderSide.none,
+        ),
+        suffixIcon: suffixIcon,
+      ),
+      validator: validator,
     );
   }
 }
