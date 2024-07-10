@@ -5,9 +5,8 @@ import '../../infrastructure/persistence/database_helper.dart';
 class SyncService {
   final Dio _dio = Dio();
   final DatabaseHelper _databaseHelper = DatabaseHelper.instance;
-  final String _baseUrl =
-      //'http://200.105.169.35:7000/paginaXApp';
-      'http://192.168.3.107:9223/paginaXApp';
+  final String _baseUrl = 'http://200.105.169.35:7000/paginaXApp';
+  //'http://192.168.3.107:9223/paginaXApp';
   Future<void> syncProductos(String token, int codCiudad) async {
     try {
       print('Iniciando sincronización de productos');

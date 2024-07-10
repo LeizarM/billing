@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../application/auth/auth_service.dart';
-import 'change_password_screen.dart';
+import '../item/item_list_screen.dart'; //
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -21,7 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
-        final login = await _authService.login(
+        await _authService.login(
           _usernameController.text,
           _passwordController.text,
         );
@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
           if (!mounted) return;
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (context) => const ChangePasswordScreen(isForced: true),
+              builder: (context) => ItemsScreen(),
             ),
           );
         } else {
@@ -75,14 +75,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Logo o icono de la app
-                    Icon(
+                    const Icon(
                       Icons.account_balance,
                       size: 80,
                       color: Colors.white,
                     ),
-                    SizedBox(height: 48),
+                    const SizedBox(height: 48),
                     // Título de bienvenida
-                    Text(
+                    const Text(
                       'Bienvenido',
                       style: TextStyle(
                         fontSize: 32,
@@ -90,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 48),
+                    const SizedBox(height: 48),
                     // Formulario de login
                     Form(
                       key: _formKey,
@@ -108,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               return null;
                             },
                           ),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           // Campo de contraseña
                           _buildTextField(
                             controller: _passwordController,
@@ -135,12 +135,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               },
                             ),
                           ),
-                          SizedBox(height: 24),
+                          const SizedBox(height: 24),
                           // Botón de inicio de sesión
                           ElevatedButton(
                             onPressed: _isLoading ? null : _login,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(
+                              padding: const EdgeInsets.symmetric(
                                   horizontal: 48, vertical: 16),
                               child: _isLoading
                                   ? SizedBox(
@@ -153,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         strokeWidth: 2,
                                       ),
                                     )
-                                  : Text(
+                                  : const Text(
                                       'Iniciar sesión',
                                       style: TextStyle(fontSize: 18),
                                     ),
@@ -190,11 +190,11 @@ class _LoginScreenState extends State<LoginScreen> {
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
-      style: TextStyle(color: Colors.white),
+      style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         prefixIcon: Icon(icon, color: Colors.white70),
         hintText: hintText,
-        hintStyle: TextStyle(color: Colors.white70),
+        hintStyle: const TextStyle(color: Colors.white70),
         filled: true,
         fillColor: Colors.white.withOpacity(0.1),
         border: OutlineInputBorder(

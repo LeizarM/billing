@@ -10,7 +10,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1;
   Login? _userData;
   final LocalStorageService _localStorageService = LocalStorageService();
   late List<Widget> _widgetOptions;

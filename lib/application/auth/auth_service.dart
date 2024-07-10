@@ -10,8 +10,8 @@ class AuthService implements AuthRepository {
   Login? _userData;
 
   final String _baseUrl =
-      //'http://200.105.169.35:7000/auth'; // Reemplaza con la URL de tu API
-      'http://192.168.3.107:9223/auth';
+      'http://200.105.169.35:7000/auth'; // Reemplaza con la URL de tu API
+  //'http://192.168.3.107:9223/auth';
   final SyncService _syncService = SyncService();
 
   final LocalStorageService _localStorageService = LocalStorageService();
