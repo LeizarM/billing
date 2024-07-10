@@ -1,7 +1,8 @@
+import 'package:billing/presentation/auth/change_password_screen.dart';
+import 'package:billing/presentation/dashboard/dashboard_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../../application/auth/auth_service.dart';
-import '../item/item_list_screen.dart'; //
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -30,12 +31,17 @@ class _LoginScreenState extends State<LoginScreen> {
           if (!mounted) return;
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (context) => ItemsScreen(),
+              builder: (context) => const ChangePasswordScreen(isForced: true),
             ),
           );
         } else {
           if (!mounted) return;
-          Navigator.of(context).pushReplacementNamed('/dashboard');
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => const DashboardScreen(
+                  initialIndex: 1), // Iniciar en la página de Items
+            ),
+          );
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(

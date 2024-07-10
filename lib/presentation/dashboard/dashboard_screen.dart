@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../item/item_list_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key, required int initialIndex});
+
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
 }

@@ -27,8 +27,10 @@ class MyApp extends StatelessWidget {
       initialRoute: '/login',
       routes: {
         '/login': (context) => LoginScreen(),
-        '/dashboard': (context) => DashboardScreen(),
-        '/change-password': (context) => ChangePasswordScreen(),
+        '/dashboard': (context) => DashboardScreen(
+              initialIndex: 1,
+            ),
+        '/change-password': (context) => const ChangePasswordScreen(),
       },
     );
   }
