@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 class ItemDetailScreen extends StatelessWidget {
   final List<Map<String, dynamic>> items;
 
-  const ItemDetailScreen({Key? key, required this.items}) : super(key: key);
+  const ItemDetailScreen({super.key, required this.items});
 
   String _getCompanyName(String db) {
     switch (db) {
@@ -55,13 +55,13 @@ class ItemDetailScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          SelectableText(
                             'Código: ${firstItem['codArticulo']}',
                             style: const TextStyle(
                                 fontSize: 20, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
-                          Text(
+                          SelectableText(
                             'Descripción: ${firstItem['datoArt']}',
                             style: const TextStyle(fontSize: 16),
                           ),
