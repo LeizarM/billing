@@ -7,7 +7,12 @@ import 'presentation/auth/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await DatabaseHelper.instance.database;
+  try {
+    await DatabaseHelper.instance.database;
+  } catch (e) {
+    print('Error initializing database: $e');
+    // Manejar el error apropiadamente, quizás mostrando un diálogo al usuario
+  }
   runApp(const MyApp());
 }
 
@@ -27,7 +32,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/login',
       routes: {
         '/login': (context) => LoginScreen(),
-        '/dashboard': (context) => DashboardScreen(
+        '/dashboard': (context) => const DashboardScreen(
               initialIndex: 1,
             ),
         '/change-password': (context) => const ChangePasswordScreen(),

@@ -1,5 +1,9 @@
 import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:sembast/sembast.dart';
+import 'package:sembast/sembast_io.dart';
+import 'package:sembast_web/sembast_web.dart';
+import 'package:universal_platform/universal_platform.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -13,140 +17,99 @@ class DatabaseHelper {
     return _database!;
   }
 
-  Future<Database> _initDB(String filePath) async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, filePath);
-
-    return await openDatabase(
-      path,
-      version: 4,
-      onCreate: _createDB,
-      onUpgrade: _onUpgrade,
-    );
-  }
-
-  Future<void> _createDB(Database db, int version) async {
-    await db.execute('''
-    CREATE TABLE productos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      codArticulo TEXT,
-      datoArt TEXT,
-      listaPrecio INTEGER,
-      precio REAL,
-      moneda TEXT,
-      gramaje REAL,
-      codigoFamilia TEXT,
-      disponible INTEGER,
-      unidadMedida TEXT,
-      codCiudad INTEGER,
-      codGrpFamiliaSap TEXT,
-      ruta TEXT,
-      audUsuario INTEGER,
-      db TEXT
-    )
-    ''');
-
-    await db.execute('''
-    CREATE UNIQUE INDEX idx_producto_unique 
-    ON productos (codArticulo, listaPrecio, db, codCiudad)
-    ''');
+  Future<Database> _initDB(String dbName) async {
+    if (UniversalPlatform.isWeb) {
+      final factory = databaseFactoryWeb;
+      return await factory.openDatabase(dbName);
+    } else {
+      final appDocDir = await getApplicationDocumentsDirectory();
+      final dbPath = join(appDocDir.path, dbName);
+      return await databaseFactoryIo.openDatabase(dbPath);
+    }
   }
 
   Future<void> upsertProductos(List<Map<String, dynamic>> productos) async {
     final db = await database;
+    final store = stringMapStoreFactory.store('productos');
+
+    // Create a Set of keys from the API data
+    final apiSet = <String>{};
+    final safeProductos = <String, Map<String, dynamic>>{};
+
+    for (var producto in productos) {
+      final codArticulo = producto['codArticulo']?.toString() ?? '';
+      final listaPrecio = producto['listaPrecio']?.toString() ?? '';
+      final db = producto['db']?.toString() ?? '';
+      final codCiudad = producto['codCiudad']?.toString() ?? '';
+
+      final key = '${codArticulo}_${listaPrecio}_${db}_${codCiudad}';
+      apiSet.add(key);
+
+      // Ensure all values are non-null and store in a map
+      safeProductos[key] = Map<String, dynamic>.from(producto)
+        ..updateAll((key, value) => value ?? '');
+    }
+
+    // Perform the upsert and deletion within a single transaction
     await db.transaction((txn) async {
-      final batch = txn.batch();
+      // Get all existing products' keys
+      final existingProducts = await store.findKeys(txn);
+      final existingSet = Set<String>.from(existingProducts);
 
-      // Obtiene todos los códigos de artículos existentes en la base de datos
-      final existingCodes = await txn.query('productos',
-          columns: ['codArticulo', 'listaPrecio', 'db', 'codCiudad']);
-      final existingSet = Set<String>.from(existingCodes.map((e) =>
-          '${e['codArticulo']}_${e['listaPrecio']}_${e['db']}_${e['codCiudad']}'));
+      // Upsert all API products in batch
+      await store
+          .records(safeProductos.keys)
+          .put(txn, safeProductos.values.toList());
 
-      // Set para almacenar los códigos que vienen de la API
-      final apiSet = <String>{};
-
-      for (var producto in productos) {
-        final key =
-            '${producto['codArticulo']}_${producto['listaPrecio']}_${producto['db']}_${producto['codCiudad']}';
-        apiSet.add(key);
-
-        // Añade operación de inserción
-        batch.insert(
-          'productos',
-          producto,
-          conflictAlgorithm: ConflictAlgorithm.ignore,
-        );
-
-        // Añade operación de actualización
-        batch.update(
-          'productos',
-          {
-            'precio': producto['precio'],
-            'disponible': producto['disponible'],
-            // Añade aquí otros campos que quieras actualizar
-          },
-          where:
-              'codArticulo = ? AND listaPrecio = ? AND db = ? AND codCiudad = ?',
-          whereArgs: [
-            producto['codArticulo'],
-            producto['listaPrecio'],
-            producto['db'],
-            producto['codCiudad']
-          ],
-        );
-      }
-
-      // Eliminar productos que ya no existen en la API
+      // Find and delete the products that no longer exist in the API
       final toDelete = existingSet.difference(apiSet);
-      for (var key in toDelete) {
-        final parts = key.split('_');
-        batch.delete(
-          'productos',
-          where:
-              'codArticulo = ? AND listaPrecio = ? AND db = ? AND codCiudad = ?',
-          whereArgs: [parts[0], parts[1], parts[2], parts[3]],
-        );
+      if (toDelete.isNotEmpty) {
+        await store.records(toDelete).delete(txn);
       }
-
-      // Ejecuta todas las operaciones del batch
-      await batch.commit(noResult: true);
     });
   }
 
-  // Para obtener los items desde sqflite
   Future<List<Map<String, dynamic>>> getItems() async {
     final db = await database;
-    return await db.query('productos');
+    final store = stringMapStoreFactory.store('productos');
+    final snapshots = await store.find(db);
+    return snapshots.map((snapshot) => snapshot.value).toList();
   }
 
-  // Para obtener los datos de la base de datos sqlflite
   Future<List<Map<String, dynamic>>> getItemsPaginated(
       int offset, int limit) async {
     final db = await database;
-    return await db.query(
-      'productos',
-      limit: limit,
-      offset: offset,
-      orderBy: 'datoArt ASC',
+    final store = stringMapStoreFactory.store('productos');
+    final snapshots = await store.find(
+      db,
+      finder: Finder(
+        offset: offset,
+        limit: limit,
+        sortOrders: [SortOrder('datoArt')],
+      ),
     );
+    return snapshots.map((snapshot) => snapshot.value).toList();
   }
 
-  // Para filtrar los datos por descripción o código
   Future<List<Map<String, dynamic>>> searchItems(String query) async {
     final db = await database;
-    return await db.query(
-      'productos',
-      where: 'codArticulo LIKE ? OR datoArt LIKE ?',
-      whereArgs: ['%$query%', '%$query%'],
-      orderBy: 'datoArt ASC',
+    final store = stringMapStoreFactory.store('productos');
+    final snapshots = await store.find(
+      db,
+      finder: Finder(
+        filter: Filter.or([
+          Filter.custom((record) => record['codArticulo']
+              .toString()
+              .toLowerCase()
+              .contains(query.toLowerCase())),
+          Filter.custom((record) => record['datoArt']
+              .toString()
+              .toLowerCase()
+              .contains(query.toLowerCase())),
+        ]),
+        sortOrders: [SortOrder('datoArt')],
+      ),
     );
-  }
-
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 4) {
-      await db.execute('DROP TABLE IF EXISTS productos');
-      await _createDB(db, newVersion);
-    }
+    return snapshots.map((snapshot) => snapshot.value).toList();
   }
 }
