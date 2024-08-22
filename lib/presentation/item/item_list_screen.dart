@@ -130,8 +130,8 @@ class _ItemScreenState extends State<ItemsScreen> {
           _searchController.clear();
           _loadItems();
         },
-        child: Icon(Icons.refresh),
         tooltip: 'Recargar items',
+        child: const Icon(Icons.refresh),
       ),
     );
   }

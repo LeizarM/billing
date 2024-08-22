@@ -71,7 +71,8 @@ class ItemDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   ...groupedItems.entries
-                      .map((entry) => _buildCompanyInfo(entry.key, entry.value))
+                      .map((entry) =>
+                          _buildCompanyInfo(context, entry.key, entry.value))
                       .toList(),
                   const SizedBox(height: 16),
                   _buildCommonInfo(firstItem),
@@ -99,8 +100,8 @@ class ItemDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCompanyInfo(
-      String company, List<Map<String, dynamic>> companyItems) {
+  Widget _buildCompanyInfo(BuildContext context, String company,
+      List<Map<String, dynamic>> companyItems) {
     final companyName = _getCompanyName(company);
     final totalDisponible = companyItems.first['disponible'];
     final unidadMedida = companyItems.first['unidadMedida'];
@@ -148,9 +149,31 @@ class ItemDetailScreen extends StatelessWidget {
                   ),
                 )),
             const Divider(),
-            Text(
-              'Total disponible: $totalDisponible $unidadMedida',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Total disponible: $totalDisponible $unidadMedida',
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            Tooltip(
+              message: 'Ver detalles del stock',
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/item-detail-storage',
+                    arguments: {
+                      'companyItems': companyItems,
+                      'companyName': companyName,
+                    },
+                  );
+                },
+                child: const Text('Detalle'),
+              ),
             ),
           ],
         ),
@@ -170,9 +193,6 @@ class ItemDetailScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const Divider(),
             _buildDetailRow('Código de Familia', '${item['codigoFamilia']}'),
-            /* _buildDetailRow('Código de Ciudad', '${item['codCiudad']}'),
-            _buildDetailRow('Código Grupo Familia SAP', '${item['codGrpFamiliaSap']}'),
-            _buildDetailRow('Ruta', '${item['ruta']}'), */
           ],
         ),
       ),
