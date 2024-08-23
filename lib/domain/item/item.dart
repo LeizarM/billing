@@ -1,20 +1,20 @@
 class ArticuloPrecioDisponible {
-  String codArticulo;
-  String datoArt;
-  double listaPrecio;
-  double precio;
-  String moneda;
-  double gramaje;
-  double codigoFamilia;
-  double disponible;
-  String unidadMedida;
-  double codCiudad;
-  double codGrpFamiliaSap;
-  String ruta;
-  double audUsuario;
-  String db;
-  String whsCode;
-  String whsName;
+  String? codArticulo;
+  String? datoArt;
+  int? listaPrecio;
+  num? precio;
+  String? moneda;
+  num? gramaje;
+  int? codigoFamilia;
+  num? disponible;
+  String? unidadMedida;
+  int? codCiudad;
+  int? codGrpFamiliaSap;
+  String? ruta;
+  int? audUsuario;
+  String? db;
+  String? whsCode;
+  String? whsName;
 
   ArticuloPrecioDisponible({
     required this.codArticulo,

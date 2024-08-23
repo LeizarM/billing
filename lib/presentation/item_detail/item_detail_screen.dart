@@ -71,9 +71,27 @@ class ItemDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   ...groupedItems.entries
-                      .map((entry) =>
-                          _buildCompanyInfo(context, entry.key, entry.value))
+                      .map((entry) => _buildCompanyInfo(entry.key, entry.value))
                       .toList(),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: Tooltip(
+                      message: 'Ver Disponible',
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushNamed(
+                            context,
+                            '/item-detail-storage',
+                            arguments: {
+                              'companyItems': items,
+                              'companyName': 'Todas las empresas',
+                            },
+                          );
+                        },
+                        child: const Text('Detalle de Disponibilidad'),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   _buildCommonInfo(firstItem),
                 ],
@@ -100,8 +118,8 @@ class ItemDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCompanyInfo(BuildContext context, String company,
-      List<Map<String, dynamic>> companyItems) {
+  Widget _buildCompanyInfo(
+      String company, List<Map<String, dynamic>> companyItems) {
     final companyName = _getCompanyName(company);
     final totalDisponible = companyItems.first['disponible'];
     final unidadMedida = companyItems.first['unidadMedida'];
@@ -149,7 +167,7 @@ class ItemDetailScreen extends StatelessWidget {
                   ),
                 )),
             const Divider(),
-            Row(
+            /* Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
@@ -158,23 +176,7 @@ class ItemDetailScreen extends StatelessWidget {
                       fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ],
-            ),
-            Tooltip(
-              message: 'Ver detalles del stock',
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(
-                    context,
-                    '/item-detail-storage',
-                    arguments: {
-                      'companyItems': companyItems,
-                      'companyName': companyName,
-                    },
-                  );
-                },
-                child: const Text('Detalle'),
-              ),
-            ),
+            ), */
           ],
         ),
       ),

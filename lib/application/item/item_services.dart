@@ -36,9 +36,9 @@ class ArticuloPrecioDisponibleService
 
       if (response.statusCode == 200) {
         final data = response.data as List<dynamic>;
+        debugPrint('Artículos obtenidos: $data');
         _temp = data
-            .map((item) =>
-                ArticuloPrecioDisponible.fromJson(item as Map<String, dynamic>))
+            .map((item) => ArticuloPrecioDisponible.fromJson(item))
             .toList();
         return _temp ?? [];
       } else if (response.statusCode == 404) {
@@ -63,7 +63,7 @@ class ArticuloPrecioDisponibleService
       }
       throw Exception('Error en la conexión con el servidor: ${e.message}');
     } catch (e) {
-      debugPrint('Error inesperado: $e');
+      debugPrint('Error inesperado*****: $e');
       throw Exception('Error inesperado al obtener artículos: $e');
     }
   }
