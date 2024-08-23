@@ -70,17 +70,16 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
         try {
           itemsXStorge = await _obtenerArticuloXAlmacen
               .obtenerArticulosXAlmacen(codArticulo, _userData!.codCiudad)
-              .timeout(const Duration(
-                  seconds: 10)); // Añadimos un timeout de 10 segundos
+              .timeout(const Duration(seconds: 10));
         } catch (e) {
-          continue; // Continuamos con el siguiente ítem si hay un error
+          print('Error al obtener datos para $codArticulo: $e');
+          continue;
         }
 
         if (!groupedItemsData.containsKey(codArticulo)) {
           groupedItemsData[codArticulo] = [];
         }
 
-        // Eliminar duplicados
         for (var newItem in itemsXStorge) {
           if (!groupedItemsData[codArticulo]!.any((existingItem) =>
               existingItem.whsCode == newItem.whsCode &&
@@ -96,6 +95,7 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
         isLoading = false;
       });
     } catch (e) {
+      print('Error en _loadData: $e');
       if (!mounted) return;
       setState(() {
         errorMessage = 'Error al cargar los detalles: ${e.toString()}';
@@ -110,52 +110,76 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
       appBar: AppBar(
         title: const Text('Detalles de Stock'),
         centerTitle: true,
+        elevation: 0,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : errorMessage != null
-              ? _buildErrorWidget()
-              : _buildContent(),
-      floatingActionButton: FloatingActionButton(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Theme.of(context).colorScheme.primary.withOpacity(0.05),
+              Colors.white,
+            ],
+          ),
+        ),
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : errorMessage != null
+                ? _buildErrorWidget()
+                : _buildContent(),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (context) => const DashboardScreen(
-                  initialIndex: 1), // Iniciar en la página de Items
+              builder: (context) => const DashboardScreen(initialIndex: 1),
             ),
           );
         },
-        tooltip: 'Inicio',
-        child: const Icon(Icons.home_filled),
+        label: const Text('Inicio'),
+        icon: const Icon(Icons.home_filled),
+        backgroundColor: Theme.of(context).colorScheme.secondary,
+        foregroundColor: Theme.of(context).colorScheme.onSecondary,
       ),
     );
   }
 
   Widget _buildErrorWidget() {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(
-              errorMessage!,
-              style: const TextStyle(color: Colors.red, fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _loadData,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Reintentar'),
-              style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline,
+                  size: 64, color: Theme.of(context).colorScheme.error),
+              const SizedBox(height: 16),
+              Text(
+                errorMessage!,
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.error, fontSize: 18),
+                textAlign: TextAlign.center,
               ),
-            ),
-          ],
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _loadData,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Reintentar'),
+                style: ElevatedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -168,8 +192,22 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (companyName != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Text(
+                  companyName!,
+                  style: const TextStyle(
+                      fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+              ),
             if (groupedItemsData.isEmpty)
-              const Center(child: Text('No hay información disponible'))
+              const Center(
+                child: Text(
+                  'No hay información disponible',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                ),
+              )
             else
               _buildGroupedItemsList(),
           ],
@@ -189,49 +227,96 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
         final totalDisponible = _calculateTotalDisponible(items);
 
         return Card(
-          margin: const EdgeInsets.only(bottom: 16),
+          elevation: 4,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          margin: const EdgeInsets.only(bottom: 24),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SelectableText('Código: $codArticulo',
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                SelectableText('Descripción: ${items.first.datoArt}',
-                    style: const TextStyle(fontSize: 16)),
-                const SizedBox(height: 16),
-                const SelectableText('Disponibilidades:',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                const Divider(),
-                ...items.map((item) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SelectableText('${item.whsName} (${item.whsCode})',
-                              style: TextStyle(
-                                  color: Theme.of(context).primaryColor,
-                                  fontWeight: FontWeight.w500)),
-                          const SizedBox(height: 4),
-                          SelectableText(
-                              'Disponible: ${_formatNumber(item.disponible)}'),
-                          SelectableText('Base de Datos: ${item.db}'),
-                        ],
-                      ),
-                    )),
-                const SizedBox(height: 16),
                 SelectableText(
-                    'Total Disponible: ${_formatNumber(totalDisponible)}',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold)),
+                  'Código: $codArticulo',
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                SelectableText(
+                  items.first.datoArt,
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Disponibilidades:',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const Divider(height: 32),
+                ...items.map((item) => _buildStockItem(item, context)),
+                const Divider(height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Total Disponible:',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      _formatNumber(totalDisponible),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildStockItem(dynamic item, BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${item.whsName} (${item.whsCode})',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text('Base de Datos: ${item.db}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Text(
+              _formatNumber(item.disponible),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -30,13 +30,28 @@ class ItemDetailScreen extends StatelessWidget {
             floating: false,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
-              title: const Text('Detalles del Item'),
+              title: Text(
+                'Detalles del Item',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  shadows: [
+                    Shadow(
+                      offset: const Offset(1.0, 1.0),
+                      blurRadius: 3.0,
+                      color: Colors.black.withOpacity(0.3),
+                    ),
+                  ],
+                ),
+              ),
               background: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Colors.blue, Colors.indigo],
+                    colors: [
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.secondary,
+                    ],
                   ),
                 ),
               ),
@@ -48,51 +63,13 @@ class ItemDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Card(
-                    elevation: 4,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SelectableText(
-                            'Código: ${firstItem['codArticulo']}',
-                            style: const TextStyle(
-                                fontSize: 20, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          SelectableText(
-                            'Descripción: ${firstItem['datoArt']}',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ...groupedItems.entries
-                      .map((entry) => _buildCompanyInfo(entry.key, entry.value))
-                      .toList(),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: Tooltip(
-                      message: 'Ver Disponible',
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(
-                            context,
-                            '/item-detail-storage',
-                            arguments: {
-                              'companyItems': items,
-                              'companyName': 'Todas las empresas',
-                            },
-                          );
-                        },
-                        child: const Text('Detalle de Disponibilidad'),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  _buildItemHeader(firstItem),
+                  const SizedBox(height: 24),
+                  ...groupedItems.entries.map((entry) =>
+                      _buildCompanyInfo(context, entry.key, entry.value)),
+                  const SizedBox(height: 24),
+                  _buildAvailabilityButton(context),
+                  const SizedBox(height: 24),
                   _buildCommonInfo(firstItem),
                 ],
               ),
@@ -103,33 +80,39 @@ class ItemDetailScreen extends StatelessWidget {
     );
   }
 
-  Map<String, List<Map<String, dynamic>>> _groupItemsByCompany(
-      List<Map<String, dynamic>> items) {
-    return items.fold<Map<String, List<Map<String, dynamic>>>>(
-      {},
-      (map, item) {
-        final db = item['db'] as String;
-        if (!map.containsKey(db)) {
-          map[db] = [];
-        }
-        map[db]!.add(item);
-        return map;
-      },
+  Widget _buildItemHeader(Map<String, dynamic> item) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SelectableText(
+              'Código: ${item['codArticulo']}',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            SelectableText(
+              item['datoArt'],
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildCompanyInfo(
-      String company, List<Map<String, dynamic>> companyItems) {
+  Widget _buildCompanyInfo(BuildContext context, String company,
+      List<Map<String, dynamic>> companyItems) {
     final companyName = _getCompanyName(company);
-    final totalDisponible = companyItems.first['disponible'];
-    final unidadMedida = companyItems.first['unidadMedida'];
     companyItems.sort((a, b) => b['listaPrecio'].compareTo(a['listaPrecio']));
-
-    // Crea un formateador de números
     final numberFormat = NumberFormat('#,##0.00');
 
     return Card(
       elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -138,9 +121,13 @@ class ItemDetailScreen extends StatelessWidget {
           children: [
             Text(
               companyName,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
-            const Divider(),
+            const Divider(height: 24),
             const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -161,23 +148,42 @@ class ItemDetailScreen extends StatelessWidget {
                       Text('Lista ${item['listaPrecio']}'),
                       Text(
                         '${numberFormat.format(item['precio'])} ${item['moneda']}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
                       ),
                     ],
                   ),
                 )),
-            const Divider(),
-            /* Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Total disponible: $totalDisponible $unidadMedida',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ), */
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvailabilityButton(BuildContext context) {
+    return Center(
+      child: ElevatedButton.icon(
+        onPressed: () {
+          Navigator.pushNamed(
+            context,
+            '/item-detail-storage',
+            arguments: {
+              'companyItems': items,
+              'companyName': 'Todas las empresas',
+            },
+          );
+        },
+        icon: const Icon(Icons.visibility),
+        label: const Text('Detalle de Disponibilidad'),
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Theme.of(context).colorScheme.onSecondary,
+          backgroundColor: Theme.of(context).colorScheme.secondary,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
         ),
       ),
     );
@@ -186,14 +192,17 @@ class ItemDetailScreen extends StatelessWidget {
   Widget _buildCommonInfo(Map<String, dynamic> item) {
     return Card(
       elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Información Adicional:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const Divider(),
+            const Text(
+              'Información Adicional:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Divider(height: 24),
             _buildDetailRow('Código de Familia', '${item['codigoFamilia']}'),
           ],
         ),
@@ -211,6 +220,21 @@ class ItemDetailScreen extends StatelessWidget {
           Text(value),
         ],
       ),
+    );
+  }
+
+  Map<String, List<Map<String, dynamic>>> _groupItemsByCompany(
+      List<Map<String, dynamic>> items) {
+    return items.fold<Map<String, List<Map<String, dynamic>>>>(
+      {},
+      (map, item) {
+        final db = item['db'] as String;
+        if (!map.containsKey(db)) {
+          map[db] = [];
+        }
+        map[db]!.add(item);
+        return map;
+      },
     );
   }
 }
