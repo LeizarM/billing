@@ -34,7 +34,7 @@ class _ItemScreenState extends State<ItemsScreen> {
 
   void _onSearchChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 1000), () {
+    _debounce = Timer(const Duration(milliseconds: 500), () {
       _searchItems(_searchController.text);
     });
   }
@@ -50,7 +50,7 @@ class _ItemScreenState extends State<ItemsScreen> {
 
   Future<void> _searchItems(String query) async {
     setState(() => _isLoading = true);
-    final items = await _databaseHelper.searchItems(query);
+    final items = await _databaseHelper.searchItems(query: query);
     setState(() {
       _items = items;
       _isLoading = false;
@@ -78,7 +78,7 @@ class _ItemScreenState extends State<ItemsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Lista de Items'),
+        title: const Text('Lista de Items'),
       ),
       body: Column(
         children: [
@@ -88,7 +88,7 @@ class _ItemScreenState extends State<ItemsScreen> {
               controller: _searchController,
               decoration: InputDecoration(
                 labelText: 'Buscar por código o nombre',
-                suffixIcon: Icon(Icons.search),
+                suffixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -97,9 +97,9 @@ class _ItemScreenState extends State<ItemsScreen> {
           ),
           Expanded(
             child: _isLoading
-                ? Center(child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator())
                 : groupedItems.isEmpty
-                    ? Center(child: Text('No se encontraron items'))
+                    ? const Center(child: Text('No se encontraron items'))
                     : ListView.builder(
                         itemCount: groupedItems.length,
                         itemBuilder: (context, index) {
@@ -107,8 +107,15 @@ class _ItemScreenState extends State<ItemsScreen> {
                           return ListTile(
                             title: Text(
                                 item['datoArt']?.toString() ?? 'Sin nombre'),
-                            subtitle: Text('Código: ${item['codArticulo']}'),
-                            trailing: Text('Ver detalles'),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Código: ${item['codArticulo']}'),
+                                const SizedBox(width: 10),
+                                Text('Disponible: ${item['disponible']}'),
+                              ],
+                            ),
+                            trailing: const Text('Ver detalles'),
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(

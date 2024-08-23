@@ -91,25 +91,32 @@ class DatabaseHelper {
     return snapshots.map((snapshot) => snapshot.value).toList();
   }
 
-  Future<List<Map<String, dynamic>>> searchItems(String query) async {
+  Future<List<Map<String, dynamic>>> searchItems({String? query}) async {
     final db = await database;
     final store = stringMapStoreFactory.store('productos');
-    final snapshots = await store.find(
-      db,
-      finder: Finder(
-        filter: Filter.or([
-          Filter.custom((record) => record['codArticulo']
-              .toString()
-              .toLowerCase()
-              .contains(query.toLowerCase())),
-          Filter.custom((record) => record['datoArt']
-              .toString()
-              .toLowerCase()
-              .contains(query.toLowerCase())),
-        ]),
-        sortOrders: [SortOrder('datoArt')],
-      ),
-    );
+
+    if (query == null || query.isEmpty) {
+      return getItems();
+    }
+
+    final keywords =
+        query.toLowerCase().split(' ').where((k) => k.isNotEmpty).toList();
+
+    final finder = Finder(
+        filter: Filter.and(keywords
+            .map((keyword) => Filter.or([
+                  Filter.custom((record) => record['codArticulo']
+                      .toString()
+                      .toLowerCase()
+                      .contains(keyword)),
+                  Filter.custom((record) => record['datoArt']
+                      .toString()
+                      .toLowerCase()
+                      .contains(keyword)),
+                ]))
+            .toList()));
+
+    final snapshots = await store.find(db, finder: finder);
     return snapshots.map((snapshot) => snapshot.value).toList();
   }
 }
