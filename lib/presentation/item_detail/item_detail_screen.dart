@@ -145,7 +145,7 @@ class ItemDetailScreen extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Lista ${item['listaPrecio']}'),
+                      Text('Lista ${item['listaPrecio']}:'),
                       Text(
                         '${numberFormat.format(item['precio'])} ${item['moneda']}',
                         style: TextStyle(
