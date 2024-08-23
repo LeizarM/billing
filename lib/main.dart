@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
       title: 'IPX - ESP',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.indigo,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       initialRoute: '/login',

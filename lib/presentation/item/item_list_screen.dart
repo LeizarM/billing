@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:billing/presentation/item_detail/item_detail_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../infrastructure/persistence/database_helper.dart';
 
@@ -65,6 +66,8 @@ class _ItemScreenState extends State<ItemsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final numberFormat = NumberFormat('#,##0.00');
+
     final groupedItems = _items.fold<Map<String, Map<String, dynamic>>>(
       {},
       (map, item) {
@@ -112,7 +115,8 @@ class _ItemScreenState extends State<ItemsScreen> {
                               children: [
                                 Text('Código: ${item['codArticulo']}'),
                                 const SizedBox(width: 10),
-                                Text('Disponible: ${item['disponible']}'),
+                                Text(
+                                    'Disponible: ${numberFormat.format(item['disponible'])}'),
                               ],
                             ),
                             trailing: const Text('Ver detalles'),
