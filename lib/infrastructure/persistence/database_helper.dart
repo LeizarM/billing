@@ -32,7 +32,7 @@ class DatabaseHelper {
     final db = await database;
     final store = stringMapStoreFactory.store('productos');
 
-    // Create a Set of keys from the API data
+    // Crear un Set de claves a partir de los datos de la API
     final apiSet = <String>{};
     final safeProductos = <String, Map<String, dynamic>>{};
 
@@ -45,26 +45,28 @@ class DatabaseHelper {
       final key = '${codArticulo}_${listaPrecio}_${db}_${codCiudad}';
       apiSet.add(key);
 
-      // Ensure all values are non-null and store in a map
+      // Asegurarse de que todos los valores no sean nulos y almacenarlos en un mapa
       safeProductos[key] = Map<String, dynamic>.from(producto)
         ..updateAll((key, value) => value ?? '');
     }
 
-    // Perform the upsert and deletion within a single transaction
-    await db.transaction((txn) async {
-      // Get all existing products' keys
-      final existingProducts = await store.findKeys(txn);
-      final existingSet = Set<String>.from(existingProducts);
+    // Obtener todas las claves existentes de los productos antes de la transacción
+    final existingProducts = await store.findKeys(db);
+    final existingSet = Set<String>.from(existingProducts);
 
-      // Upsert all API products in batch
+    // Preparar los elementos a eliminar antes de la transacción
+    final toDelete = existingSet.difference(apiSet);
+
+    // Procesar en un solo lote la inserción/actualización y la eliminación
+    await db.transaction((txn) async {
+      // Upsert todos los productos de la API en un solo lote
       await store
           .records(safeProductos.keys)
           .put(txn, safeProductos.values.toList());
 
-      // Find and delete the products that no longer exist in the API
-      final toDelete = existingSet.difference(apiSet);
+      // Eliminar los productos que ya no existen en la API
       if (toDelete.isNotEmpty) {
-        await store.records(toDelete).delete(txn);
+        await store.records(toDelete.toList()).delete(txn);
       }
     });
   }
