@@ -62,7 +62,8 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
       for (var item in _items!) {
         final codArticulo = item['codArticulo'] as String?;
         if (codArticulo == null) {
-          print('Advertencia: Código de artículo no disponible para un ítem');
+          debugPrint(
+              'Advertencia: Código de artículo no disponible para un ítem');
           continue;
         }
 
@@ -84,14 +85,14 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
             }
           }
         } catch (e) {
-          print('Error al obtener datos para $codArticulo: $e');
+          debugPrint('Error al obtener datos para $codArticulo: $e');
         }
       }
 
       if (!mounted) return;
       setState(() => isLoading = false);
     } catch (e) {
-      print('Error en _loadData: $e');
+      debugPrint('Error en _loadData: $e');
       if (!mounted) return;
       setState(() {
         errorMessage = 'Error al cargar los detalles: ${e.toString()}';
