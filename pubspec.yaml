@@ -43,6 +43,7 @@ dependencies:
   sembast: ^3.7.3+2
   sembast_web: ^2.4.0+2
   universal_platform: ^1.1.0
+  skeletonizer: ^1.4.2
 
 flutter_icons:
   android: true

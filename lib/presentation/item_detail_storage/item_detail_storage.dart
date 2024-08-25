@@ -5,6 +5,7 @@ import 'package:billing/application/item/item_services.dart';
 import 'package:billing/domain/auth/login.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class ItemDetailStorgate extends StatefulWidget {
   final List<Map<String, dynamic>>? items;
@@ -108,7 +109,12 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
         centerTitle: true,
         elevation: 0,
       ),
-      body: errorMessage != null ? _buildErrorWidget() : _buildContent(),
+      body: errorMessage != null
+          ? _buildErrorWidget()
+          : Skeletonizer(
+              enabled: isLoading,
+              child: _buildContent(),
+            ),
     );
   }
 
@@ -162,17 +168,13 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (_items != null && _items!.isNotEmpty)
-              isLoading
-                  ? _buildSkeletonHeader()
-                  : _buildItemHeader(_items!.first),
+              _buildItemHeader(_items!.first),
             const SizedBox(height: 24),
             _buildCityTotalsSection(cityTotals, totalGeneral),
             const SizedBox(height: 24),
-            isLoading
-                ? _buildSkeletonAvailability()
-                : _buildAvailabilitySection(),
+            _buildAvailabilitySection(),
             const SizedBox(height: 24),
-            isLoading ? _buildSkeletonPrices() : _buildPricesSection(),
+            _buildPricesSection(),
             const SizedBox(height: 24),
             _buildFamilyCode(),
           ],
@@ -228,9 +230,7 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
 
     groupedItemsData.forEach((codArticulo, items) {
       for (var item in items) {
-        // Convertir codCiudad a String
-        final String city = item.ciudad ?? 'Desconocida';
-        // Convertir disponible a double
+        final String city = item.ciudad?.toString() ?? 'Desconocida';
         final double disponible = (item.disponible as num?)?.toDouble() ?? 0.0;
 
         if (!cityTotals.containsKey(city)) {
@@ -241,62 +241,6 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
     });
 
     return cityTotals;
-  }
-
-  Widget _buildSkeletonHeader() => _buildSkeletonCard([200.0, double.infinity]);
-
-  Widget _buildSkeletonAvailability() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(width: 150, height: 24, color: Colors.grey[300]),
-        const SizedBox(height: 16),
-        for (int i = 0; i < 3; i++)
-          _buildSkeletonCard(
-              List.filled(3, 0)
-                  .map((_) => [double.infinity, 60.0])
-                  .expand((e) => e)
-                  .toList(),
-              bottomPadding: 16),
-      ],
-    );
-  }
-
-  Widget _buildSkeletonPrices() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(width: 100, height: 24, color: Colors.grey[300]),
-        const SizedBox(height: 16),
-        for (int i = 0; i < 2; i++)
-          _buildSkeletonCard([150.0, 100.0, 80.0, 100.0, 80.0, 100.0, 80.0],
-              bottomPadding: 16),
-      ],
-    );
-  }
-
-  Widget _buildSkeletonCard(List<double> itemWidths,
-      {double bottomPadding = 0}) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomPadding),
-      child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: itemWidths
-                .map((width) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Container(
-                          width: width, height: 16, color: Colors.grey[300]),
-                    ))
-                .toList(),
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _buildItemHeader(Map<String, dynamic> item) {
