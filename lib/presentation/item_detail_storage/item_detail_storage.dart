@@ -196,7 +196,7 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
           final double total = entry.value;
 
           return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4.0),
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -248,18 +248,19 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding:
+            const EdgeInsets.all(20.0), // Increased padding for a cleaner look
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SelectableText(
               'Código: ${item['codArticulo']}',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             SelectableText(
               item['datoArt'],
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 16, color: Colors.grey[700]),
             ),
           ],
         ),
@@ -283,9 +284,10 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
             elevation: 4,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.only(bottom: 16),
+            margin: const EdgeInsets.only(
+                bottom: 20), // Increased margin for better spacing
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16), // Added consistent padding
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -317,7 +319,8 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
 
   Widget _buildStockItem(dynamic item) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(
+          vertical: 10.0), // Increased vertical padding
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -329,10 +332,12 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
                   '${item.whsName} (${item.whsCode})',
                   style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: Theme.of(context).primaryColor),
+                      color: Theme.of(context).primaryColor,
+                      fontSize: 16), // Updated font size for better readability
                 ),
+                const SizedBox(height: 4), // Added spacing between text lines
                 Text('Base de Datos: ${item.db}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600])),
               ],
             ),
           ),
@@ -369,7 +374,8 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(
+          bottom: 20), // Increased margin for better spacing
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -382,7 +388,8 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
                     color: Theme.of(context).primaryColor)),
             const Divider(height: 24),
             ...companyItems.map((item) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 6), // Adjusted padding for balance
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -392,7 +399,7 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
                           '${numberFormat.format(item['precio'])} ${item['moneda']}',
                           style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Color.fromARGB(255, 98, 4, 175))),
+                              color: Color.fromARGB(255, 78, 2, 141))),
                     ],
                   ),
                 )),
