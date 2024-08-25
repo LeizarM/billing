@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import '../../infrastructure/persistence/database_helper.dart';
 
 class ItemsScreen extends StatefulWidget {
+  const ItemsScreen({super.key});
+
   @override
   _ItemScreenState createState() => _ItemScreenState();
 }

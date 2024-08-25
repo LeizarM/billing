@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../../application/auth/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -101,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
             color: Colors.black.withOpacity(0.2),
             spreadRadius: 5,
             blurRadius: 7,
-            offset: Offset(0, 3),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -129,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Shadow(
             blurRadius: 10.0,
             color: Colors.black.withOpacity(0.3),
-            offset: Offset(0, 5),
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -199,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
             color: Colors.black.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 3,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),

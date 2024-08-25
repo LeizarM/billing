@@ -76,11 +76,10 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
           }
 
           for (var newItem in itemsXStorge) {
-            if (newItem != null &&
-                !groupedItemsData[codArticulo]!.any((existingItem) =>
-                    existingItem?.whsCode == newItem.whsCode &&
-                    existingItem?.db == newItem.db &&
-                    existingItem?.disponible == newItem.disponible)) {
+            if (!groupedItemsData[codArticulo]!.any((existingItem) =>
+                existingItem?.whsCode == newItem.whsCode &&
+                existingItem?.db == newItem.db &&
+                existingItem?.disponible == newItem.disponible)) {
               groupedItemsData[codArticulo]!.add(newItem);
             }
           }
@@ -207,7 +206,7 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
               ],
             ),
           );
-        }).toList(),
+        }),
         const Divider(height: 24),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -312,7 +311,7 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
               ),
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -360,8 +359,7 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
         ...groupedItems.entries
-            .map((entry) => _buildCompanyInfo(entry.key, entry.value))
-            .toList(),
+            .map((entry) => _buildCompanyInfo(entry.key, entry.value)),
       ],
     );
   }

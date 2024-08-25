@@ -5,8 +5,7 @@ import '../../application/auth/auth_service.dart';
 class ChangePasswordScreen extends StatefulWidget {
   final bool isForced;
 
-  const ChangePasswordScreen({Key? key, this.isForced = false})
-      : super(key: key);
+  const ChangePasswordScreen({super.key, this.isForced = false});
 
   @override
   _ChangePasswordScreenState createState() => _ChangePasswordScreenState();
@@ -32,7 +31,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       try {
         await _authService.changePassword(_newPasswordController.text);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Contraseña cambiada con éxito')),
+          const SnackBar(content: Text('Contraseña cambiada con éxito')),
         );
         Navigator.of(context).pushReplacementNamed('/dashboard');
       } catch (e) {
@@ -49,26 +48,26 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Cambiar Contraseña'),
+        title: const Text('Cambiar Contraseña'),
         automaticallyImplyLeading: !widget.isForced,
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (widget.isForced)
-                Text(
+                const Text(
                   'Por razones de seguridad, debe cambiar su contraseña.',
                   style: TextStyle(fontSize: 16, color: Colors.red),
                 ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               TextFormField(
                 controller: _newPasswordController,
                 obscureText: true,
-                decoration: InputDecoration(labelText: 'Nueva Contraseña'),
+                decoration: const InputDecoration(labelText: 'Nueva Contraseña'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor ingrese una nueva contraseña';
@@ -79,12 +78,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   return null;
                 },
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               TextFormField(
                 controller: _confirmPasswordController,
                 obscureText: true,
                 decoration:
-                    InputDecoration(labelText: 'Confirmar Nueva Contraseña'),
+                    const InputDecoration(labelText: 'Confirmar Nueva Contraseña'),
                 validator: (value) {
                   if (value != _newPasswordController.text) {
                     return 'Las contraseñas no coinciden';
@@ -92,12 +91,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   return null;
                 },
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _isLoading ? null : _changePassword,
                 child: _isLoading
-                    ? CircularProgressIndicator()
-                    : Text('Cambiar Contraseña'),
+                    ? const CircularProgressIndicator()
+                    : const Text('Cambiar Contraseña'),
               ),
             ],
           ),

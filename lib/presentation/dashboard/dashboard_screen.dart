@@ -23,7 +23,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _loadUserData();
     _widgetOptions = <Widget>[
       DashboardContent(userData: _userData),
-      ItemsScreen(),
+      const ItemsScreen(),
     ];
   }
 
@@ -81,7 +81,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 class DashboardContent extends StatelessWidget {
   final Login? userData;
 
-  const DashboardContent({Key? key, this.userData}) : super(key: key);
+  const DashboardContent({super.key, this.userData});
 
   @override
   Widget build(BuildContext context) {

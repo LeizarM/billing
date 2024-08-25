@@ -42,7 +42,7 @@ class DatabaseHelper {
       final db = producto['db']?.toString() ?? '';
       final codCiudad = producto['codCiudad']?.toString() ?? '';
 
-      final key = '${codArticulo}_${listaPrecio}_${db}_${codCiudad}';
+      final key = '${codArticulo}_${listaPrecio}_${db}_$codCiudad';
       apiSet.add(key);
 
       // Asegurarse de que todos los valores no sean nulos y almacenarlos en un mapa
