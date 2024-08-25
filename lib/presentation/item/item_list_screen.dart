@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:billing/presentation/item_detail/item_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -17,7 +16,7 @@ class _ItemScreenState extends State<ItemsScreen> {
   bool _isLoading = false;
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
-  final NumberFormat numberFormat = NumberFormat('#,##0.00', 'es_ES');
+  final NumberFormat numberFormat = NumberFormat('#,##0.00');
 
   @override
   void initState() {
@@ -65,46 +64,7 @@ class _ItemScreenState extends State<ItemsScreen> {
         .toList();
   }
 
-  void _showPrices(BuildContext context, List<Map<String, dynamic>> items) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Precios'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: items
-                  .map((item) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Lista ${item['listaPrecio']}'),
-                            Text(
-                              '${numberFormat.format(item['precio'])} ${item['moneda']}',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ))
-                  .toList(),
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cerrar'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showAvailability(
+  void _navigateToAvailability(
       BuildContext context, List<Map<String, dynamic>> items) {
     Navigator.pushNamed(
       context,
@@ -132,19 +92,22 @@ class _ItemScreenState extends State<ItemsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Lista de Items'),
+        elevation: 0,
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(16.0),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 labelText: 'Buscar por código o nombre',
-                suffixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                filled: true,
+                fillColor: Colors.grey[200],
               ),
             ),
           ),
@@ -153,69 +116,29 @@ class _ItemScreenState extends State<ItemsScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : groupedItems.isEmpty
                     ? const Center(child: Text('No se encontraron items'))
-                    : ListView.builder(
+                    : ListView.separated(
                         itemCount: groupedItems.length,
+                        separatorBuilder: (context, index) =>
+                            const Divider(height: 1),
                         itemBuilder: (context, index) {
                           final item = groupedItems.values.elementAt(index);
-                          final groupedItemsList =
-                              _getGroupedItems(item['codArticulo'].toString());
-                          return Card(
-                            margin: const EdgeInsets.symmetric(
-                                vertical: 4, horizontal: 8),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item['datoArt']?.toString() ?? 'Sin nombre',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text('Código: ${item['codArticulo']}'),
-                                  Text(
-                                      'Disponible: ${numberFormat.format(item['disponible'])}'),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      ElevatedButton(
-                                        /* onPressed: () => _showPrices( context, groupedItemsList ),
-                                        style: ElevatedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 4),
-                                          minimumSize: const Size(100, 30),
-                                        ), */
-                                        onPressed: () {
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  ItemDetailScreen(
-                                                items: _getGroupedItems(
-                                                    item['codArticulo']
-                                                        .toString()),
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        child: const Text('Ver Precios'),
-                                      ),
-                                      ElevatedButton(
-                                        onPressed: () => _showAvailability(
-                                            context, groupedItemsList),
-                                        style: ElevatedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 4),
-                                          minimumSize: const Size(100, 30),
-                                        ),
-                                        child: const Text('Disponibilidad'),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                          return ListTile(
+                            title: Text(
+                              item['datoArt']?.toString() ?? 'Sin nombre',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Código: ${item['codArticulo']}'),
+                                Text(
+                                    'Disponible: ${numberFormat.format(item['disponible'])}'),
+                              ],
+                            ),
+                            onTap: () => _navigateToAvailability(
+                              context,
+                              _getGroupedItems(item['codArticulo'].toString()),
                             ),
                           );
                         },

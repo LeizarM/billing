@@ -15,6 +15,8 @@ class ArticuloPrecioDisponible {
   String? db;
   String? whsCode;
   String? whsName;
+  String? condicionPrecio;
+  String? ciudad;
 
   ArticuloPrecioDisponible({
     required this.codArticulo,
@@ -33,6 +35,8 @@ class ArticuloPrecioDisponible {
     required this.db,
     required this.whsCode,
     required this.whsName,
+    required this.condicionPrecio,
+    required this.ciudad,
   });
 
   factory ArticuloPrecioDisponible.fromJson(Map<String, dynamic> json) =>
@@ -53,6 +57,8 @@ class ArticuloPrecioDisponible {
         db: json["db"],
         whsCode: json["whsCode"],
         whsName: json["whsName"],
+        condicionPrecio: json["condicionPrecio"],
+        ciudad: json["ciudad"],
       );
 
   Map<String, dynamic> toJson() => {
@@ -72,5 +78,7 @@ class ArticuloPrecioDisponible {
         "db": db,
         "whsCode": whsCode,
         "whsName": whsName,
+        "condicionPrecio": condicionPrecio,
+        "ciudad": ciudad,
       };
 }
