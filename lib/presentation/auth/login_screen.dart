@@ -1,3 +1,4 @@
+import 'package:billing/constants/constants.dart';
 import 'package:billing/presentation/auth/change_password_screen.dart';
 import 'package:billing/presentation/dashboard/dashboard_screen.dart';
 import 'package:flutter/material.dart';
@@ -24,7 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
-        await _authService.login(
+        final login = await _authService.login(
           _usernameController.text,
           _passwordController.text,
         );
@@ -38,6 +39,19 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         } else {
           if (!mounted) return;
+
+          if (_compareVersions(APP_VERSION, login.versionApp) < 0) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'La versión de la aplicación es obsoleta. Por favor actualice a la versión ${login.versionApp}',
+                ),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
+            return;
+          }
+
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (context) => const DashboardScreen(initialIndex: 1),
@@ -57,6 +71,17 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     }
+  }
+
+  int _compareVersions(String v1, String v2) {
+    var parts1 = v1.split('.');
+    var parts2 = v2.split('.');
+    for (int i = 0; i < 3; i++) {
+      int p1 = int.parse(parts1[i]);
+      int p2 = int.parse(parts2[i]);
+      if (p1 != p2) return p1 - p2;
+    }
+    return 0;
   }
 
   @override

@@ -9,6 +9,7 @@ class Login {
   final int codEmpresa;
   final int codCiudad;
   final String login;
+  final String versionApp;
   final List<Authority> authorities;
 
   Login({
@@ -22,6 +23,7 @@ class Login {
     required this.codEmpresa,
     required this.codCiudad,
     required this.login,
+    required this.versionApp,
     required this.authorities,
   });
 
@@ -37,6 +39,7 @@ class Login {
       codEmpresa: json['codEmpresa'],
       codCiudad: json['codCiudad'],
       login: json['login'],
+      versionApp: json['versionApp'],
       authorities: (json['authorities'] as List)
           .map((a) => Authority.fromJson(a))
           .toList(),
@@ -55,6 +58,7 @@ class Login {
       'codEmpresa': codEmpresa,
       'codCiudad': codCiudad,
       'login': login,
+      'versionApp': versionApp,
       'authorities': authorities.map((a) => a.toJson()).toList(),
     };
   }
