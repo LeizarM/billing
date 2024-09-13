@@ -1,3 +1,5 @@
+import 'package:billing/application/auth/local_storage_service.dart';
+import 'package:billing/application/sync/sync_service.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sembast/sembast.dart';
@@ -8,6 +10,7 @@ import 'package:universal_platform/universal_platform.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
+  bool _hasSyncedAfterLogin = false;
 
   DatabaseHelper._init();
 
@@ -32,7 +35,6 @@ class DatabaseHelper {
     final db = await database;
     final store = stringMapStoreFactory.store('productos');
 
-    // Crear un Set de claves a partir de los datos de la API
     final apiSet = <String>{};
     final safeProductos = <String, Map<String, dynamic>>{};
 
@@ -45,26 +47,20 @@ class DatabaseHelper {
       final key = '${codArticulo}_${listaPrecio}_${db}_$codCiudad';
       apiSet.add(key);
 
-      // Asegurarse de que todos los valores no sean nulos y almacenarlos en un mapa
       safeProductos[key] = Map<String, dynamic>.from(producto)
         ..updateAll((key, value) => value ?? '');
     }
 
-    // Obtener todas las claves existentes de los productos antes de la transacción
     final existingProducts = await store.findKeys(db);
     final existingSet = Set<String>.from(existingProducts);
 
-    // Preparar los elementos a eliminar antes de la transacción
     final toDelete = existingSet.difference(apiSet);
 
-    // Procesar en un solo lote la inserción/actualización y la eliminación
     await db.transaction((txn) async {
-      // Upsert todos los productos de la API en un solo lote
       await store
           .records(safeProductos.keys)
           .put(txn, safeProductos.values.toList());
 
-      // Eliminar los productos que ya no existen en la API
       if (toDelete.isNotEmpty) {
         await store.records(toDelete.toList()).delete(txn);
       }
@@ -72,6 +68,14 @@ class DatabaseHelper {
   }
 
   Future<List<Map<String, dynamic>>> getItems() async {
+    if (!_hasSyncedAfterLogin) {
+      final userData = await LocalStorageService().getUser();
+      if (userData != null) {
+        await SyncService().syncProductos(userData.token, userData.codCiudad);
+        _hasSyncedAfterLogin = true;
+      }
+    }
+
     final db = await database;
     final store = stringMapStoreFactory.store('productos');
     final snapshots = await store.find(db);
@@ -120,5 +124,9 @@ class DatabaseHelper {
 
     final snapshots = await store.find(db, finder: finder);
     return snapshots.map((snapshot) => snapshot.value).toList();
+  }
+
+  void resetSyncState() {
+    _hasSyncedAfterLogin = false;
   }
 }

@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import '../item/item_list_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key, required int initialIndex});
+  const DashboardScreen({Key? key, required int initialIndex})
+      : super(key: key);
 
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
@@ -16,6 +17,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Login? _userData;
   final LocalStorageService _localStorageService = LocalStorageService();
   late List<Widget> _widgetOptions;
+  bool _isDrawerExpanded = true;
 
   @override
   void initState() {
@@ -39,6 +41,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() {
       _selectedIndex = index;
     });
+    Navigator.of(context).pop(); // Cierra el drawer después de seleccionar
   }
 
   @override
@@ -56,23 +59,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
+      drawer: _buildDrawer(),
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+    );
+  }
+
+  Widget _buildDrawer() {
+    return Drawer(
+      child: Column(
+        children: [
+          UserAccountsDrawerHeader(
+            accountName: Text(_userData?.nombreCompleto ?? ""),
+            accountEmail: Text(_userData?.login ?? ""),
+            currentAccountPicture: CircleAvatar(
+              backgroundColor: Colors.white,
+              child: Text(
+                _userData?.nombreCompleto.substring(0, 1).toUpperCase() ?? "",
+                style: TextStyle(fontSize: 40.0),
+              ),
+            ),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: 'Items',
+          ListTile(
+            leading: Icon(Icons.dashboard),
+            title: Text('Dashboard'),
+            selected: _selectedIndex == 0,
+            onTap: () => _onItemTapped(0),
+          ),
+          ListTile(
+            leading: Icon(Icons.list),
+            title: Text('Items'),
+            selected: _selectedIndex == 1,
+            onTap: () => _onItemTapped(1),
+          ),
+          Expanded(child: Container()), // Spacer
+          ListTile(
+            leading: Icon(
+                _isDrawerExpanded ? Icons.chevron_left : Icons.chevron_right),
+            title: Text(_isDrawerExpanded ? 'Colapsar' : 'Expandir'),
+            onTap: () {
+              setState(() {
+                _isDrawerExpanded = !_isDrawerExpanded;
+              });
+              Navigator.of(context).pop();
+            },
           ),
         ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Theme.of(context).primaryColor,
-        onTap: _onItemTapped,
       ),
     );
   }
@@ -81,7 +117,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 class DashboardContent extends StatelessWidget {
   final Login? userData;
 
-  const DashboardContent({super.key, this.userData});
+  const DashboardContent({Key? key, this.userData}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -113,16 +149,7 @@ class DashboardContent extends StatelessWidget {
           const SizedBox(height: 24),
           _buildInfoCard('Información de Usuario', [
             _buildInfoRow('Cargo', userData!.cargo),
-            /*  _buildInfoRow('Tipo de Usuario', userData!.tipoUsuario),
-            _buildInfoRow('Código de Usuario', userData!.codUsuario.toString()),
-            _buildInfoRow(
-                'Código de Empleado', userData!.codEmpleado.toString()), */
           ]),
-          /*  const SizedBox(height: 16),
-          _buildInfoCard('Información de Empresa', [
-            _buildInfoRow('Código de Empresa', userData!.codEmpresa.toString()),
-            _buildInfoRow('Código de Ciudad', userData!.codCiudad.toString()),
-          ]), */
         ],
       ),
     );

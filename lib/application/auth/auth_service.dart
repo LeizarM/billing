@@ -1,19 +1,16 @@
 import 'package:billing/application/auth/local_storage_service.dart';
+import 'package:billing/constants/constants.dart';
 import 'package:dio/dio.dart';
 
 import '../../domain/auth/auth_repository.dart';
 import '../../domain/auth/login.dart';
-import '../sync/sync_service.dart';
+import '../../infrastructure/persistence/database_helper.dart';
 
 class AuthService implements AuthRepository {
   final Dio _dio = Dio();
-  Login? _userData;
 
-  final String _baseUrl =
-      'http://200.105.169.35:7000/auth'; // Reemplaza con la URL de tu API
-  //'http://192.168.3.107:9223/auth';
-  final SyncService _syncService = SyncService();
-
+  //final String _baseUrl = 'http://200.105.169.35:7000/auth';
+  final String _baseUrl = '${BASE_URL}auth';
   final LocalStorageService _localStorageService = LocalStorageService();
 
   @override
@@ -24,17 +21,9 @@ class AuthService implements AuthRepository {
         '$_baseUrl/login/',
         data: {'login': username, 'password2': password},
       );
-
       if (response.data is Map<String, dynamic>) {
         final login = Login.fromJson(response.data);
-
-        // Guardar usuario en el almacenamiento local
         await _localStorageService.saveUser(login);
-
-        _userData = await _localStorageService.getUser();
-
-        // Iniciar sincronización después del login exitoso
-        await _syncService.syncProductos(login.token, _userData!.codCiudad);
 
         return login;
       } else {
@@ -62,7 +51,6 @@ class AuthService implements AuthRepository {
   Future<void> changePassword(String nPassword) async {
     final token = await _localStorageService.getToken();
     final codUsuario = await _localStorageService.getCodUsuario();
-
     try {
       await _dio.post(
         '$_baseUrl/changePasswordDefault',
@@ -80,5 +68,10 @@ class AuthService implements AuthRepository {
   @override
   Future<void> logout() async {
     await _localStorageService.clearUser();
+
+    // Resetear el estado de sincronización
+    DatabaseHelper.instance.resetSyncState();
+
+    // Aquí podrías agregar cualquier otra limpieza necesaria
   }
 }

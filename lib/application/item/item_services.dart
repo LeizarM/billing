@@ -1,4 +1,5 @@
 import 'package:billing/application/auth/local_storage_service.dart';
+import 'package:billing/constants/constants.dart';
 import 'package:billing/domain/item/item.dart';
 import 'package:billing/domain/item/item_repository.dart';
 import 'package:dio/dio.dart';
@@ -7,9 +8,8 @@ import 'package:flutter/material.dart';
 class ArticuloPrecioDisponibleService
     implements ArticuloPrecioDisponibleRepository {
   final Dio _dio = Dio();
-  final String _baseUrl =
-      'http://200.105.169.35:7000/paginaXApp'; // Reemplaza con la URL de tu API
-  //'http://192.168.3.107:9223/auth';
+
+  final String _baseUrl = '${BASE_URL}paginaXApp';
 
   final LocalStorageService _localStorageService = LocalStorageService();
   List<ArticuloPrecioDisponible>? _temp;

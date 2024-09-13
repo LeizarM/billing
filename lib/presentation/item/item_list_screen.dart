@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../application/auth/local_storage_service.dart';
+import '../../application/sync/sync_service.dart';
 import '../../infrastructure/persistence/database_helper.dart';
 
 class ItemsScreen extends StatefulWidget {
-  const ItemsScreen({super.key});
+  const ItemsScreen({Key? key}) : super(key: key);
 
   @override
   _ItemScreenState createState() => _ItemScreenState();
@@ -14,6 +16,8 @@ class ItemsScreen extends StatefulWidget {
 
 class _ItemScreenState extends State<ItemsScreen> {
   final DatabaseHelper _databaseHelper = DatabaseHelper.instance;
+  final LocalStorageService _localStorageService = LocalStorageService();
+  final SyncService _syncService = SyncService();
   List<Map<String, dynamic>> _items = [];
   bool _isLoading = false;
   final TextEditingController _searchController = TextEditingController();
@@ -44,20 +48,74 @@ class _ItemScreenState extends State<ItemsScreen> {
 
   Future<void> _loadItems() async {
     setState(() => _isLoading = true);
-    final items = await _databaseHelper.getItems();
-    setState(() {
-      _items = items;
-      _isLoading = false;
-    });
+    try {
+      final items = await _databaseHelper.getItems();
+      setState(() {
+        _items = items;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error al cargar items: $e');
+      setState(() {
+        _isLoading = false;
+      });
+      _showErrorDialog('Error al cargar los items');
+    }
   }
 
   Future<void> _searchItems(String query) async {
     setState(() => _isLoading = true);
-    final items = await _databaseHelper.searchItems(query: query);
-    setState(() {
-      _items = items;
-      _isLoading = false;
-    });
+    try {
+      final items = await _databaseHelper.searchItems(query: query);
+      setState(() {
+        _items = items;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error al buscar items: $e');
+      setState(() {
+        _isLoading = false;
+      });
+      _showErrorDialog('Error al buscar los items');
+    }
+  }
+
+  Future<void> _forceSyncFromServer() async {
+    setState(() => _isLoading = true);
+    try {
+      final userData = await _localStorageService.getUser();
+      if (userData != null) {
+        await _syncService.syncProductos(userData.token, userData.codCiudad);
+        await _loadItems(); // Recargar los items después de la sincronización
+      } else {
+        throw Exception('No se encontraron datos de usuario');
+      }
+    } catch (e) {
+      print('Error al sincronizar: $e');
+      _showErrorDialog('Error al sincronizar con el servidor');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   List<Map<String, dynamic>> _getGroupedItems(String codArticulo) {
@@ -148,13 +206,26 @@ class _ItemScreenState extends State<ItemsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _searchController.clear();
-          _loadItems();
-        },
-        tooltip: 'Recargar items',
-        child: const Icon(Icons.refresh),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            onPressed: _forceSyncFromServer,
+            tooltip: 'Sincronizar con SAP',
+            heroTag: null,
+            child: const Icon(Icons.sync),
+          ),
+          const SizedBox(height: 16),
+          FloatingActionButton(
+            onPressed: () {
+              _searchController.clear();
+              _loadItems();
+            },
+            tooltip: 'Recargar items',
+            heroTag: null,
+            child: const Icon(Icons.refresh),
+          ),
+        ],
       ),
     );
   }

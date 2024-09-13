@@ -54,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (context) => const DashboardScreen(initialIndex: 1),
+              builder: (context) => const DashboardScreen(initialIndex: 0),
             ),
           );
         }
