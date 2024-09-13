@@ -173,7 +173,20 @@ class _ItemScreenState extends State<ItemsScreen> {
           ),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.0),
+                        child: LinearProgressIndicator(),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Cargando...',
+                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                      ),
+                    ],
+                  )
                 : groupedItems.isEmpty
                     ? const Center(child: Text('No se encontraron items'))
                     : ListView.separated(

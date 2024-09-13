@@ -18,10 +18,6 @@ class SyncService {
         data: {'codCiudad': codCiudad},
       );
 
-      debugPrint('Respuesta recibida: ${response.statusCode}');
-      debugPrint('Tipo de datos recibidos: ${response.data.runtimeType}');
-      debugPrint('Contenido de la respuesta: ${response.data}');
-
       if (response.data is List) {
         List<Map<String, dynamic>> productos =
             List<Map<String, dynamic>>.from(response.data);
