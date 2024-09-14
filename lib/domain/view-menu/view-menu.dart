@@ -9,28 +9,28 @@ class Vista {
   int? autorizar;
   int? audUsuarioI;
   int? fila;
-  List<Vista>? items = [];
+  List<Vista>? items;
   String? label;
   int? tieneHijo;
   String? routerLink;
   String? icon;
 
   Vista({
-    required this.codVista,
-    required this.codVistaPadre,
-    required this.direccion,
-    required this.titulo,
-    required this.descripcion,
-    required this.imagen,
-    required this.esRaiz,
-    required this.autorizar,
-    required this.audUsuarioI,
-    required this.fila,
-    required List<Vista>? items,
-    required this.label,
-    required this.tieneHijo,
-    required this.routerLink,
-    required this.icon,
+    this.codVista,
+    this.codVistaPadre,
+    this.direccion,
+    this.titulo,
+    this.descripcion,
+    this.imagen,
+    this.esRaiz,
+    this.autorizar,
+    this.audUsuarioI,
+    this.fila,
+    this.items,
+    this.label,
+    this.tieneHijo,
+    this.routerLink,
+    this.icon,
   });
 
   factory Vista.fromJson(Map<String, dynamic> json) => Vista(
@@ -64,7 +64,7 @@ class Vista {
         "autorizar": autorizar,
         "audUsuarioI": audUsuarioI,
         "fila": fila,
-        "items": [],
+        "items": items?.map((x) => x.toJson()).toList(),
         "label": label,
         "tieneHijo": tieneHijo,
         "routerLink": routerLink,

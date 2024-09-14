@@ -1,8 +1,9 @@
 import 'package:billing/application/auth/local_storage_service.dart';
+import 'package:billing/application/view-menu/view-menu_service.dart';
 import 'package:billing/domain/auth/login.dart';
+import 'package:billing/domain/view-menu/view-menu.dart';
+import 'package:billing/presentation/item/item_list_screen.dart';
 import 'package:flutter/material.dart';
-
-import '../item/item_list_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key, required int initialIndex})
@@ -13,11 +14,12 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int _selectedIndex = 1;
+  int _selectedIndex = 0; // Cambiado a 0 para iniciar en el Dashboard
   Login? _userData;
+  List<Vista>? _menuItems;
   final LocalStorageService _localStorageService = LocalStorageService();
+  final ViewMenuService _viewMenuService = ViewMenuService();
   late List<Widget> _widgetOptions;
-  bool _isDrawerExpanded = true;
 
   @override
   void initState() {
@@ -31,24 +33,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadUserData() async {
     final userData = await _localStorageService.getUser();
-    setState(() {
-      _userData = userData;
-      _widgetOptions[0] = DashboardContent(userData: _userData);
-    });
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-    Navigator.of(context).pop(); // Cierra el drawer después de seleccionar
+    if (userData != null) {
+      final menuItems =
+          await _viewMenuService.obtainViewMenu(userData.codUsuario);
+      setState(() {
+        _userData = userData;
+        _menuItems = menuItems;
+        _widgetOptions[0] = DashboardContent(userData: _userData);
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('IPX - ESP , ${_userData?.login ?? ""}'),
+        title: Text(_selectedIndex == 0 ? 'Dashboard' : 'Lista de Artículos'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -68,8 +68,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildDrawer() {
     return Drawer(
-      child: Column(
-        children: [
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: <Widget>[
           UserAccountsDrawerHeader(
             accountName: Text(_userData?.nombreCompleto ?? ""),
             accountEmail: Text(_userData?.login ?? ""),
@@ -87,37 +88,85 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ListTile(
             leading: Icon(Icons.dashboard),
             title: Text('Dashboard'),
-            selected: _selectedIndex == 0,
-            onTap: () => _onItemTapped(0),
-          ),
-          ListTile(
-            leading: Icon(Icons.list),
-            title: Text('Items'),
-            selected: _selectedIndex == 1,
-            onTap: () => _onItemTapped(1),
-          ),
-          Expanded(child: Container()), // Spacer
-          ListTile(
-            leading: Icon(
-                _isDrawerExpanded ? Icons.chevron_left : Icons.chevron_right),
-            title: Text(_isDrawerExpanded ? 'Colapsar' : 'Expandir'),
             onTap: () {
               setState(() {
-                _isDrawerExpanded = !_isDrawerExpanded;
+                _selectedIndex = 0;
               });
               Navigator.of(context).pop();
             },
           ),
+          ListTile(
+            leading: Icon(Icons.list),
+            title: Text('Lista de Artículos'),
+            onTap: () {
+              setState(() {
+                _selectedIndex = 1;
+              });
+              Navigator.of(context).pop();
+            },
+          ),
+          Divider(),
+          if (_menuItems != null) ..._buildMenuItems(_menuItems!),
         ],
       ),
     );
   }
+
+  List<Widget> _buildMenuItems(List<Vista> items) {
+    return items.map((item) => _buildMenuItem(item)).toList();
+  }
+
+  Widget _buildMenuItem(Vista item) {
+    if (item.items != null && item.items!.isNotEmpty) {
+      return ExpansionTile(
+        title: Text(item.titulo ?? item.label ?? ''),
+        children: item.items!.map((child) => _buildMenuItem(child)).toList(),
+      );
+    } else {
+      return ListTile(
+        title: Text(item.titulo ?? item.label ?? ''),
+        onTap: () {
+          _navigateOrShowDialog(context, item);
+        },
+      );
+    }
+  }
+}
+
+void _navigateOrShowDialog(BuildContext context, Vista item) {
+  try {
+    Navigator.of(context).pushNamed('${item.routerLink}');
+  } catch (e) {
+    print('Error al navegar: $e');
+    _showRouteNotAvailableDialog(
+        context, item.titulo ?? item.label ?? 'Esta vista');
+  }
+}
+
+void _showRouteNotAvailableDialog(BuildContext context, String viewName) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('Vista no disponible'),
+        content: Text('$viewName aún no está disponible en la aplicación.'),
+        actions: <Widget>[
+          TextButton(
+            child: Text('Aceptar'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
+    },
+  );
 }
 
 class DashboardContent extends StatelessWidget {
   final Login? userData;
 
-  const DashboardContent({Key? key, this.userData}) : super(key: key);
+  const DashboardContent({super.key, this.userData});
 
   @override
   Widget build(BuildContext context) {

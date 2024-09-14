@@ -1,6 +1,7 @@
 import 'package:billing/infrastructure/persistence/database_helper.dart';
 import 'package:billing/presentation/auth/change_password_screen.dart';
 import 'package:billing/presentation/dashboard/dashboard_screen.dart';
+import 'package:billing/presentation/family/family_list_screen.dart';
 import 'package:billing/presentation/item_detail_storage/item_detail_storage.dart';
 import 'package:flutter/material.dart';
 
@@ -37,7 +38,8 @@ class MyApp extends StatelessWidget {
               initialIndex: 1,
             ),
         '/change-password': (context) => const ChangePasswordScreen(),
-        '/item-detail-storage': (context) => const ItemDetailStorgate()
+        '/item-detail-storage': (context) => const ItemDetailStorgate(),
+        'tprAutorizacion/Autorizacion': (context) => const FamiliesScreen(),
       },
     );
   }
