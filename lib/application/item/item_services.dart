@@ -17,7 +17,6 @@ class ArticuloPrecioDisponibleService
   @override
   Future<List<ArticuloPrecioDisponible>> obtenerArticulosXAlmacen(
       String codArticulo, int codCiudad) async {
-    debugPrint("codArticulo es= $codArticulo, el codCiudad es $codCiudad");
     final token = await _localStorageService.getToken();
     try {
       final response = await _dio.post(
@@ -63,7 +62,7 @@ class ArticuloPrecioDisponibleService
       }
       throw Exception('Error en la conexión con el servidor: ${e.message}');
     } catch (e) {
-      debugPrint('Error inesperado*****: $e');
+      debugPrint('Error inesperado: $e');
       throw Exception('Error inesperado al obtener artículos: $e');
     }
   }

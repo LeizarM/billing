@@ -8,7 +8,7 @@ import '../../application/sync/sync_service.dart';
 import '../../infrastructure/persistence/database_helper.dart';
 
 class ItemsScreen extends StatefulWidget {
-  const ItemsScreen({Key? key}) : super(key: key);
+  const ItemsScreen({super.key});
 
   @override
   _ItemScreenState createState() => _ItemScreenState();
