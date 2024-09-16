@@ -1,9 +1,8 @@
+import 'package:billing/application/auth/auth_service.dart';
 import 'package:billing/constants/constants.dart';
 import 'package:billing/presentation/auth/change_password_screen.dart';
 import 'package:billing/presentation/dashboard/dashboard_screen.dart';
 import 'package:flutter/material.dart';
-
-import '../../application/auth/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -92,10 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.secondary,
-            ],
+            colors: [Colors.deepPurple.shade700, Colors.green.shade600],
           ),
         ),
         child: SafeArea(
@@ -133,12 +129,12 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
       child: CircleAvatar(
-        radius: 50,
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        radius: 60,
+        backgroundColor: Colors.white,
         child: Icon(
           Icons.forest_rounded,
-          size: 60,
-          color: Theme.of(context).colorScheme.primary,
+          size: 80,
+          color: Colors.green.shade600,
         ),
       ),
     );
@@ -146,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildWelcomeText() {
     return Text(
-      'Bienvenido(a)',
+      'Bienvenido',
       style: TextStyle(
         fontSize: 34,
         fontWeight: FontWeight.bold,
@@ -164,48 +160,63 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildLoginForm() {
-    return Form(
-      key: _formKey,
-      child: Column(
-        children: [
-          _buildTextField(
-            controller: _usernameController,
-            icon: Icons.person,
-            hintText: 'Usuario',
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Por favor ingrese su usuario';
-              }
-              return null;
-            },
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            spreadRadius: 5,
+            blurRadius: 7,
+            offset: const Offset(0, 3),
           ),
-          const SizedBox(height: 16),
-          _buildTextField(
-            controller: _passwordController,
-            icon: Icons.lock,
-            hintText: 'Contraseña',
-            obscureText: _obscureText,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Por favor ingrese su contraseña';
-              }
-              return null;
-            },
-            suffixIcon: IconButton(
-              icon: Icon(
-                _obscureText ? Icons.visibility : Icons.visibility_off,
-                color: Colors.white70,
-              ),
-              onPressed: () {
-                setState(() {
-                  _obscureText = !_obscureText;
-                });
+        ],
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            _buildTextField(
+              controller: _usernameController,
+              icon: Icons.person,
+              hintText: 'Usuario',
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Por favor ingrese su usuario';
+                }
+                return null;
               },
             ),
-          ),
-          const SizedBox(height: 30),
-          _buildLoginButton(),
-        ],
+            const SizedBox(height: 16),
+            _buildTextField(
+              controller: _passwordController,
+              icon: Icons.lock,
+              hintText: 'Contraseña',
+              obscureText: _obscureText,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Por favor ingrese su contraseña';
+                }
+                return null;
+              },
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscureText ? Icons.visibility : Icons.visibility_off,
+                  color: Colors.grey.shade600,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscureText = !_obscureText;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(height: 30),
+            _buildLoginButton(),
+          ],
+        ),
       ),
     );
   }
@@ -218,43 +229,35 @@ class _LoginScreenState extends State<LoginScreen> {
     bool obscureText = false,
     Widget? suffixIcon,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: TextFormField(
-        controller: controller,
-        obscureText: obscureText,
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.white70),
-          hintText: hintText,
-          hintStyle: const TextStyle(color: Colors.white70),
-          filled: true,
-          fillColor: Colors.white.withOpacity(0.2),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(30),
-            borderSide: BorderSide.none,
-          ),
-          suffixIcon: suffixIcon,
+    return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      style: TextStyle(color: Colors.black87),
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: Colors.deepPurple.shade300),
+        hintText: hintText,
+        hintStyle: TextStyle(color: Colors.grey.shade600),
+        filled: true,
+        fillColor: Colors.grey.shade100,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide.none,
         ),
-        validator: validator,
+        suffixIcon: suffixIcon,
       ),
+      validator: validator,
     );
   }
 
   Widget _buildLoginButton() {
     return ElevatedButton(
       onPressed: _isLoading ? null : _login,
-      // ignore: sort_child_properties_last
+      style: ElevatedButton.styleFrom(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        elevation: 5,
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
         child: _isLoading
@@ -262,8 +265,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.primary),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(Colors.purple.shade300),
                   strokeWidth: 2,
                 ),
               )
@@ -274,14 +277,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        foregroundColor: Theme.of(context).colorScheme.primary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
-        ),
-        elevation: 5,
       ),
     );
   }

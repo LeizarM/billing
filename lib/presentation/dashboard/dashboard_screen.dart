@@ -78,7 +78,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               backgroundColor: Colors.white,
               child: Text(
                 _userData?.nombreCompleto.substring(0, 1).toUpperCase() ?? "",
-                style: TextStyle(fontSize: 40.0),
+                style: const TextStyle(fontSize: 40.0),
               ),
             ),
             decoration: BoxDecoration(
@@ -86,8 +86,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           ListTile(
-            leading: Icon(Icons.dashboard),
-            title: Text('Dashboard'),
+            leading: const Icon(Icons.dashboard),
+            title: const Text('Dashboard'),
             onTap: () {
               setState(() {
                 _selectedIndex = 0;
@@ -96,8 +96,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             },
           ),
           ListTile(
-            leading: Icon(Icons.list),
-            title: Text('Lista de Artículos'),
+            leading: const Icon(Icons.list),
+            title: const Text('Lista de Artículos'),
             onTap: () {
               setState(() {
                 _selectedIndex = 1;
@@ -105,7 +105,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Navigator.of(context).pop();
             },
           ),
-          Divider(),
+          const Divider(),
           if (_menuItems != null) ..._buildMenuItems(_menuItems!),
         ],
       ),
@@ -148,11 +148,11 @@ void _showRouteNotAvailableDialog(BuildContext context, String viewName) {
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        title: Text('Vista no disponible'),
+        title: const Text('Vista no disponible'),
         content: Text('$viewName aún no está disponible en la aplicación.'),
         actions: <Widget>[
           TextButton(
-            child: Text('Aceptar'),
+            child: const Text('Aceptar'),
             onPressed: () {
               Navigator.of(context).pop();
             },
