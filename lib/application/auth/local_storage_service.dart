@@ -8,12 +8,14 @@ class LocalStorageService {
   static const String USER_KEY = 'user_data';
   static const String KEY_TOKEN = 'user_token';
   static const String KEY_COD_USUARIO = 'user_cod_usuario';
+  static const String KEY_COD_EMPLEADO = 'user_cod_empleado';
 
   Future<void> saveUser(Login user) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(USER_KEY, jsonEncode(user.toJson()));
     await prefs.setString(KEY_TOKEN, user.token);
     await prefs.setInt(KEY_COD_USUARIO, user.codUsuario);
+    await prefs.setInt(KEY_COD_EMPLEADO, user.codEmpleado);
   }
 
   Future<String?> getToken() async {
@@ -32,6 +34,11 @@ class LocalStorageService {
   }
 
   Future<int?> getCodUsuario() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(KEY_COD_USUARIO);
+  }
+
+  Future<int?> getCodEmpleado() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(KEY_COD_USUARIO);
   }

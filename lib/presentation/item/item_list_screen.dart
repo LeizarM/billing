@@ -24,6 +24,11 @@ class _ItemScreenState extends State<ItemsScreen> {
   Timer? _debounce;
   final NumberFormat numberFormat = NumberFormat('#,##0.00');
 
+  // Definimos los colores principales usando Material 3
+  final Color primaryColor = Color(0xFF6A1B9A); // Morado
+  final Color accentColor = Color(0xFF388E3C); // Verde
+  final Color backgroundColor = Color(0xFFF5F5F5); // Gris claro
+
   @override
   void initState() {
     super.initState();
@@ -103,11 +108,11 @@ class _ItemScreenState extends State<ItemsScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Error'),
+          title: Text('Error', style: TextStyle(color: Colors.red)),
           content: Text(message),
           actions: <Widget>[
             TextButton(
-              child: const Text('OK'),
+              child: Text('OK', style: TextStyle(color: primaryColor)),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -150,93 +155,148 @@ class _ItemScreenState extends State<ItemsScreen> {
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Lista de Items'),
-        elevation: 0,
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                labelText: 'Buscar por código o nombre',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+      backgroundColor: backgroundColor,
+      body: SafeArea(
+        child: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [],
+          body: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Material(
+                  elevation: 4,
+                  shadowColor: Colors.black26,
+                  borderRadius: BorderRadius.circular(30),
+                  child: TextField(
+                    controller: _searchController,
+                    cursorColor: primaryColor,
+                    decoration: InputDecoration(
+                      hintText: 'Buscar por código o descripción',
+                      hintStyle: TextStyle(color: Colors.grey[600]),
+                      prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: EdgeInsets.symmetric(vertical: 0),
+                    ),
+                  ),
                 ),
-                filled: true,
-                fillColor: Colors.grey[200],
               ),
-            ),
+              Expanded(
+                child: _isLoading
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(primaryColor),
+                        ),
+                      )
+                    : groupedItems.isEmpty
+                        ? Center(
+                            child: Text(
+                              'No se encontraron items',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 16,
+                              ),
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: _loadItems,
+                            child: ListView.separated(
+                              physics: BouncingScrollPhysics(),
+                              itemCount: groupedItems.length,
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(height: 8),
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              itemBuilder: (context, index) {
+                                final item =
+                                    groupedItems.values.elementAt(index);
+                                return GestureDetector(
+                                  onTap: () => _navigateToAvailability(
+                                    context,
+                                    _getGroupedItems(
+                                        item['codArticulo'].toString()),
+                                  ),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black12,
+                                          blurRadius: 4,
+                                          offset: Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    padding: EdgeInsets.all(16),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item['datoArt']?.toString() ??
+                                              'Sin nombre',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                            color: Colors.grey[800],
+                                          ),
+                                        ),
+                                        SizedBox(height: 8),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              'Código: ${item['codArticulo']}',
+                                              style: TextStyle(
+                                                  color: Colors.grey[600]),
+                                            ),
+                                            Text(
+                                              'Disponible: ${numberFormat.format(item['disponible'])}',
+                                              style: TextStyle(
+                                                  color: accentColor,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+              ),
+            ],
           ),
-          Expanded(
-            child: _isLoading
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20.0),
-                        child: LinearProgressIndicator(),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Cargando...',
-                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                      ),
-                    ],
-                  )
-                : groupedItems.isEmpty
-                    ? const Center(child: Text('No se encontraron items'))
-                    : ListView.separated(
-                        itemCount: groupedItems.length,
-                        separatorBuilder: (context, index) =>
-                            const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final item = groupedItems.values.elementAt(index);
-                          return ListTile(
-                            title: Text(
-                              item['datoArt']?.toString() ?? 'Sin nombre',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Código: ${item['codArticulo']}'),
-                                Text(
-                                    'Disponible: ${numberFormat.format(item['disponible'])}'),
-                              ],
-                            ),
-                            onTap: () => _navigateToAvailability(
-                              context,
-                              _getGroupedItems(item['codArticulo'].toString()),
-                            ),
-                          );
-                        },
-                      ),
-          ),
-        ],
+        ),
       ),
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           FloatingActionButton(
+            backgroundColor: accentColor,
             onPressed: _forceSyncFromServer,
             tooltip: 'Sincronizar con SAP',
-            heroTag: null,
-            child: const Icon(Icons.sync),
+            heroTag: 'syncButton',
+            child: const Icon(Icons.sync, color: Colors.white),
           ),
           const SizedBox(height: 16),
           FloatingActionButton(
+            backgroundColor: primaryColor,
             onPressed: () {
               _searchController.clear();
               _loadItems();
             },
             tooltip: 'Recargar items',
-            heroTag: null,
-            child: const Icon(Icons.refresh),
+            heroTag: 'refreshButton',
+            child: const Icon(Icons.refresh, color: Colors.white),
           ),
         ],
       ),

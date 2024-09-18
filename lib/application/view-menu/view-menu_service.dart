@@ -31,7 +31,7 @@ class ViewMenuService implements VistaRepository {
 
       if (response.statusCode == 200) {
         final data = response.data as List<dynamic>;
-        debugPrint('Artículos obtenidos: $data');
+        debugPrint('Datos obtenidos: $data');
         _temp = data.map((item) => Vista.fromJson(item)).toList();
         return _temp ?? [];
       } else if (response.statusCode == 404) {
