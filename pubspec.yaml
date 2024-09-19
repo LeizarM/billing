@@ -44,6 +44,8 @@ dependencies:
   sembast_web: ^2.4.0+2
   universal_platform: ^1.1.0
   skeletonizer: ^1.4.2
+  geolocator: ^13.0.1
+  geocoding: ^3.0.0
 
 flutter_icons:
   android: true

@@ -18,7 +18,7 @@ class DeliveryDriverService implements DeliveryDriverRepository {
     }
 
     final token = await _localStorageService.getToken();
-    debugPrint('Token: $token');
+
     debugPrint('Base URL: $_baseUrl');
     debugPrint('Employee Code: $codEmpleado');
 
@@ -53,6 +53,51 @@ class DeliveryDriverService implements DeliveryDriverRepository {
     } catch (e) {
       debugPrint('Unexpected error: $e');
       throw Exception('Unexpected error: $e');
+    }
+  }
+
+  // Nuevo método para guardar los datos de la entrega
+  Future<void> saveDeliveryData({
+    required int docEntry,
+    required String db,
+    required double latitude,
+    required double longitude,
+    required String address,
+    required String dateTime,
+  }) async {
+    final token = await _localStorageService.getToken();
+
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/registro-entrega-chofer',
+        data: {
+          'docEntry': docEntry,
+          'db': db,
+          'latitud': latitude,
+          'longitud': longitude,
+          'direccionEntrega': address,
+          'fechaEntrega': dateTime,
+        },
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          validateStatus: (status) => status! < 500,
+        ),
+      );
+
+      if (response.statusCode == 201) {
+        // Éxito, datos guardados
+        debugPrint('Datos de la entrega guardados correctamente.');
+      } else {
+        // Manejar errores del servidor
+        throw Exception(
+            'El servidor respondió con código de estado: ${response.statusCode}. Mensaje: ${response.data}');
+      }
+    } on DioException catch (e) {
+      debugPrint('DioException: ${e.toString()}');
+      throw Exception('Error de red: ${e.message}');
+    } catch (e) {
+      debugPrint('Error inesperado: $e');
+      throw Exception('Error inesperado: $e');
     }
   }
 }
