@@ -6,8 +6,7 @@ import 'package:billing/presentation/item/item_list_screen.dart';
 import 'package:flutter/material.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({Key? key, required int initialIndex})
-      : super(key: key);
+  const DashboardScreen({super.key, required int initialIndex});
 
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
@@ -95,7 +94,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Navigator.of(context).pop();
             },
           ),
-          ListTile(
+          /* ListTile(
             leading: const Icon(Icons.list),
             title: const Text('Lista de Artículos'),
             onTap: () {
@@ -104,7 +103,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               });
               Navigator.of(context).pop();
             },
-          ),
+          ), */
           const Divider(),
           if (_menuItems != null) ..._buildMenuItems(_menuItems!),
         ],

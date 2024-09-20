@@ -1,3 +1,4 @@
+// lib/presentation/screens/items_screen.dart
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -25,9 +26,9 @@ class _ItemScreenState extends State<ItemsScreen> {
   final NumberFormat numberFormat = NumberFormat('#,##0.00');
 
   // Definimos los colores principales usando Material 3
-  final Color primaryColor = Color(0xFF6A1B9A); // Morado
-  final Color accentColor = Color(0xFF388E3C); // Verde
-  final Color backgroundColor = Color(0xFFF5F5F5); // Gris claro
+  final Color primaryColor = const Color(0xFF6A1B9A); // Morado
+  final Color accentColor = const Color(0xFF388E3C); // Verde
+  final Color backgroundColor = const Color(0xFFF5F5F5); // Gris claro
 
   @override
   void initState() {
@@ -108,7 +109,7 @@ class _ItemScreenState extends State<ItemsScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Error', style: TextStyle(color: Colors.red)),
+          title: const Text('Error', style: TextStyle(color: Colors.red)),
           content: Text(message),
           actions: <Widget>[
             TextButton(
@@ -155,6 +156,10 @@ class _ItemScreenState extends State<ItemsScreen> {
     );
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Lista de Articulos'),
+        backgroundColor: backgroundColor,
+      ),
       backgroundColor: backgroundColor,
       body: SafeArea(
         child: NestedScrollView(
@@ -180,7 +185,7 @@ class _ItemScreenState extends State<ItemsScreen> {
                       ),
                       filled: true,
                       fillColor: Colors.white,
-                      contentPadding: EdgeInsets.symmetric(vertical: 0),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
                     ),
                   ),
                 ),
@@ -207,11 +212,12 @@ class _ItemScreenState extends State<ItemsScreen> {
                         : RefreshIndicator(
                             onRefresh: _loadItems,
                             child: ListView.separated(
-                              physics: BouncingScrollPhysics(),
+                              physics: const BouncingScrollPhysics(),
                               itemCount: groupedItems.length,
                               separatorBuilder: (context, index) =>
                                   const SizedBox(height: 8),
-                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
                               itemBuilder: (context, index) {
                                 final item =
                                     groupedItems.values.elementAt(index);
@@ -225,7 +231,7 @@ class _ItemScreenState extends State<ItemsScreen> {
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [
+                                      boxShadow: const [
                                         BoxShadow(
                                           color: Colors.black12,
                                           blurRadius: 4,
@@ -233,7 +239,7 @@ class _ItemScreenState extends State<ItemsScreen> {
                                         ),
                                       ],
                                     ),
-                                    padding: EdgeInsets.all(16),
+                                    padding: const EdgeInsets.all(16),
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
@@ -247,7 +253,7 @@ class _ItemScreenState extends State<ItemsScreen> {
                                             color: Colors.grey[800],
                                           ),
                                         ),
-                                        SizedBox(height: 8),
+                                        const SizedBox(height: 8),
                                         Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,

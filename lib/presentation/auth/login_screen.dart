@@ -161,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildLoginForm() {
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.9),
         borderRadius: BorderRadius.circular(20),
@@ -232,7 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
-      style: TextStyle(color: Colors.black87),
+      style: const TextStyle(color: Colors.black87),
       decoration: InputDecoration(
         prefixIcon: Icon(icon, color: Colors.deepPurple.shade300),
         hintText: hintText,

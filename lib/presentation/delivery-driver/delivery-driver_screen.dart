@@ -1,15 +1,17 @@
 import 'package:billing/application/auth/local_storage_service.dart';
 import 'package:billing/application/delivery-driver/delivery-driver_service.dart';
+import 'package:billing/application/delivery-driver/location_service.dart';
 import 'package:billing/domain/delivery-driver/deliverDriver.dart';
 import 'package:billing/domain/delivery-driver/groupedDelivery.dart';
+import 'package:billing/presentation/delivery-driver/widgets/customLoadingIndicator.dart';
+import 'package:billing/presentation/delivery-driver/widgets/groupedDelivery.dart';
 import 'package:collection/collection.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 
 class DeliveryDriverScreen extends StatefulWidget {
-  const DeliveryDriverScreen({Key? key}) : super(key: key);
+  const DeliveryDriverScreen({super.key});
 
   @override
   State<DeliveryDriverScreen> createState() => _DeliveryDriverScreenState();
@@ -18,6 +20,7 @@ class DeliveryDriverScreen extends StatefulWidget {
 class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
   final LocalStorageService _localStorageService = LocalStorageService();
   final DeliveryDriverService _deliveryDriverService = DeliveryDriverService();
+  final LocationService _locationService = LocationService();
   List<GroupedDelivery>? _groupedDeliveries;
   bool _isLoading = true;
   bool _isGettingLocation = false;
@@ -109,7 +112,8 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
 
       try {
         // Verificar y solicitar permisos de ubicación
-        bool permissionGranted = await _checkAndRequestLocationPermissions();
+        bool permissionGranted =
+            await _locationService.checkAndRequestLocationPermissions(context);
         if (!permissionGranted) {
           setState(() {
             _isGettingLocation = false;
@@ -117,14 +121,13 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
           return;
         }
 
-        Position position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-          ),
-        );
+        Position? position = await _locationService.getCurrentPosition();
+        if (position == null) {
+          throw Exception('No se pudo obtener la posición.');
+        }
 
         // Obtener la dirección usando la API de Nominatim con Dio
-        String address = await _getAddressFromLatLng(
+        String address = await _locationService.getAddressFromLatLng(
           position.latitude,
           position.longitude,
         );
@@ -157,10 +160,10 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
           ),
         );
       } catch (e) {
-        print('Error getting location: $e');
+        print('Error al marcar como entregada: $e');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error al obtener la ubicación'),
+          SnackBar(
+            content: Text('Error: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -248,29 +251,6 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
   }
 
   // Método para obtener la dirección desde latitud y longitud usando Dio
-  Future<String> _getAddressFromLatLng(
-      double latitude, double longitude) async {
-    final url =
-        'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=$latitude&lon=$longitude';
-
-    try {
-      Dio dio = Dio();
-
-      final response = await dio.get(url);
-
-      if (response.statusCode == 200) {
-        final data = response.data;
-        final address = data['display_name'] as String?;
-        return address ?? 'Dirección no disponible';
-      } else {
-        print('Error al obtener la dirección: ${response.statusCode}');
-        return 'Dirección no disponible';
-      }
-    } catch (e) {
-      print('Error al obtener la dirección: $e');
-      return 'Dirección no disponible';
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -307,164 +287,23 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
                       itemCount: _groupedDeliveries!.length,
                       itemBuilder: (context, index) {
                         final groupedDelivery = _groupedDeliveries![index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(
-                              horizontal: 8.0, vertical: 4.0),
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          child: ExpansionTile(
-                            title: Text(
-                              groupedDelivery.cardName,
-                              style: TextStyle(
-                                  color: _primaryColor,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                    'Fecha: ${DateFormat('dd/MM/yyyy').format(groupedDelivery.docDate)}'),
-                                Text(
-                                    'Total Productos: ${groupedDelivery.totalQuantity}'),
-                              ],
-                            ),
-                            leading: CircleAvatar(
-                              backgroundColor: groupedDelivery.isDelivered
-                                  ? _secondaryColor
-                                  : _primaryColor,
-                              child: Icon(
-                                groupedDelivery.isDelivered
-                                    ? Icons.check
-                                    : Icons.local_shipping,
-                                color: Colors.white,
-                              ),
-                            ),
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Dirección de entrega:',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: _primaryColor),
-                                    ),
-                                    Text(groupedDelivery.addressEntregaMat),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Productos:',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: _primaryColor),
-                                    ),
-                                    ...groupedDelivery.items.map((item) =>
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 4.0),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Expanded(
-                                                  child:
-                                                      Text(item.dscription!)),
-                                              Text('Cantidad: ${item.quantity}',
-                                                  style: const TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold)),
-                                            ],
-                                          ),
-                                        )),
-                                    if (!groupedDelivery.isDelivered)
-                                      Padding(
-                                        padding:
-                                            const EdgeInsets.only(top: 16.0),
-                                        child: ElevatedButton.icon(
-                                          icon: const Icon(Icons.check),
-                                          label: const Text(
-                                              'Marcar como entregado'),
-                                          onPressed: () =>
-                                              _markAsDelivered(groupedDelivery),
-                                          style: ElevatedButton.styleFrom(
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(30),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 16, vertical: 12),
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                        return GroupedDeliveryCard(
+                          groupedDelivery: groupedDelivery,
+                          primaryColor: _primaryColor,
+                          secondaryColor: _secondaryColor,
+                          tertiaryColor: _tertiaryColor,
+                          onMarkAsDelivered: () =>
+                              _markAsDelivered(groupedDelivery),
                         );
                       },
                     ),
         ),
         // Indicador de carga personalizado
         if (_isGettingLocation)
-          const _CustomLoadingIndicator(
+          const CustomLoadingIndicator(
             message: 'Guardando...',
           ),
       ],
-    );
-  }
-}
-
-// Widget personalizado para el indicador de carga
-class _CustomLoadingIndicator extends StatelessWidget {
-  final String message;
-
-  const _CustomLoadingIndicator({Key? key, required this.message})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black38,
-      child: Center(
-        child: Container(
-          width: 200,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            // Añadimos sombra para darle profundidad
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 10,
-                offset: Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Puedes reemplazar esto con una animación personalizada
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).primaryColor,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                message,
-                style: TextStyle(
-                  color: Theme.of(context).primaryColor,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
