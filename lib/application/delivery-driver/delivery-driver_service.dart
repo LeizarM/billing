@@ -57,14 +57,14 @@ class DeliveryDriverService implements DeliveryDriverRepository {
   }
 
   // Nuevo método para guardar los datos de la entrega
-  Future<void> saveDeliveryData({
-    required int docEntry,
-    required String db,
-    required double latitude,
-    required double longitude,
-    required String address,
-    required String dateTime,
-  }) async {
+  Future<void> saveDeliveryData(
+      {required int docEntry,
+      required String db,
+      required double latitude,
+      required double longitude,
+      required String address,
+      required String dateTime,
+      required int audUsuario}) async {
     final token = await _localStorageService.getToken();
 
     try {
@@ -77,6 +77,7 @@ class DeliveryDriverService implements DeliveryDriverRepository {
           'longitud': longitude,
           'direccionEntrega': address,
           'fechaEntrega': dateTime,
+          'audUsuario': audUsuario
         },
         options: Options(
           headers: {'Authorization': 'Bearer $token'},

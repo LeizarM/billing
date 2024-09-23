@@ -1,6 +1,7 @@
 import 'package:billing/application/auth/local_storage_service.dart';
 import 'package:billing/application/delivery-driver/delivery-driver_service.dart';
 import 'package:billing/application/delivery-driver/location_service.dart';
+import 'package:billing/domain/auth/login.dart';
 import 'package:billing/domain/delivery-driver/deliverDriver.dart';
 import 'package:billing/domain/delivery-driver/groupedDelivery.dart';
 import 'package:billing/presentation/delivery-driver/widgets/customLoadingIndicator.dart';
@@ -24,7 +25,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
   List<GroupedDelivery>? _groupedDeliveries;
   bool _isLoading = true;
   bool _isGettingLocation = false;
-
+  Login? userData;
   late Color _primaryColor;
   final Color _secondaryColor = Colors.green;
   late Color _tertiaryColor;
@@ -48,7 +49,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
     });
 
     try {
-      final userData = await _localStorageService.getUser();
+      userData = await _localStorageService.getUser();
       if (userData != null) {
         final deliveries = await _deliveryDriverService.obtainDelivery(13);
         _groupDeliveries(deliveries);
@@ -137,13 +138,13 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
 
         // Guardar los datos de la entrega
         await _saveDeliveryData(
-          docEntry: delivery.docEntry,
-          db: delivery.db,
-          latitude: position.latitude,
-          longitude: position.longitude,
-          address: address,
-          dateTime: currentDateTime,
-        );
+            docEntry: delivery.docEntry,
+            db: delivery.db,
+            latitude: position.latitude,
+            longitude: position.longitude,
+            address: address,
+            dateTime: currentDateTime,
+            audUsuario: userData!.codUsuario);
 
         // Actualizar el estado de la entrega localmente (opcional)
         setState(() {
@@ -176,14 +177,14 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
   }
 
   // Método para guardar los datos de la entrega
-  Future<void> _saveDeliveryData({
-    required int docEntry,
-    required String db,
-    required double latitude,
-    required double longitude,
-    required String address,
-    required String dateTime,
-  }) async {
+  Future<void> _saveDeliveryData(
+      {required int docEntry,
+      required String db,
+      required double latitude,
+      required double longitude,
+      required String address,
+      required String dateTime,
+      required int audUsuario}) async {
     try {
       await _deliveryDriverService.saveDeliveryData(
         docEntry: docEntry,
@@ -192,6 +193,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
         longitude: longitude,
         address: address,
         dateTime: dateTime,
+        audUsuario: audUsuario,
       );
       print('Datos de la entrega guardados correctamente.');
     } catch (e) {
