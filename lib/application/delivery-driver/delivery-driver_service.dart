@@ -19,9 +19,6 @@ class DeliveryDriverService implements DeliveryDriverRepository {
 
     final token = await _localStorageService.getToken();
 
-    debugPrint('Base URL: $_baseUrl');
-    debugPrint('Employee Code: $codEmpleado');
-
     try {
       final response = await _dio.post(
         '$_baseUrl/chofer-entrega/',
