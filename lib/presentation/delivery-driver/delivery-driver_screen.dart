@@ -4,14 +4,19 @@ import 'package:billing/application/delivery-driver/location_service.dart';
 import 'package:billing/domain/auth/login.dart';
 import 'package:billing/domain/delivery-driver/deliverDriver.dart';
 import 'package:billing/domain/delivery-driver/groupedDelivery.dart';
+import 'package:billing/presentation/dashboard/dashboard_screen.dart';
+import 'package:billing/presentation/delivery-driver/utils/dialogs.dart';
 import 'package:billing/presentation/delivery-driver/widgets/customLoadingIndicator.dart';
+import 'package:billing/presentation/delivery-driver/widgets/delivery_card.dart';
+import 'package:billing/presentation/delivery-driver/widgets/empty_deliveries_widget.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DeliveryDriverScreen extends StatefulWidget {
-  const DeliveryDriverScreen({super.key});
+  const DeliveryDriverScreen({Key? key}) : super(key: key);
 
   @override
   State<DeliveryDriverScreen> createState() => _DeliveryDriverScreenState();
@@ -33,10 +38,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
   }
 
   Future<void> _loadDeliveries() async {
-    setState(() {
-      _isLoading = true;
-    });
-
+    setState(() => _isLoading = true);
     try {
       userData = await _localStorageService.getUser();
       if (userData != null) {
@@ -50,9 +52,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
       print('Error loading deliveries: $e');
       _showErrorSnackBar('Error al cargar las entregas: $e');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
@@ -60,99 +60,57 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
     final grouped = groupBy(deliveries, (DeliveryDriver d) => d.docEntry);
     _groupedDeliveries = grouped.entries.map((entry) {
       final items = entry.value;
-      final db = items.first.db!;
       return GroupedDelivery(
         docEntry: entry.key!,
         cardName: items.first.cardName!,
         docDate: DateTime.parse(items.first.docDate.toString()),
         addressEntregaMat: items.first.addressEntregaMat!,
         items: items,
-        db: db,
+        db: items.first.db!,
       );
     }).toList();
   }
 
   Future<void> _markAsDelivered(GroupedDelivery delivery) async {
-    bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Confirmar entrega',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text(
-            '¿Estás seguro de que quieres marcar esta entrega como completada?'),
-        actions: <Widget>[
-          TextButton(
-            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
-            onPressed: () => Navigator.of(context).pop(false),
-          ),
-          ElevatedButton(
-            child: const Text('Confirmar'),
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).primaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30)),
-            ),
-          ),
-        ],
-      ),
-    );
+    bool? confirm = await showConfirmationDialog(context);
+    if (confirm != true) return;
 
-    if (confirm == true) {
-      setState(() {
-        _isGettingLocation = true;
-      });
-
-      try {
-        bool permissionGranted =
-            await _locationService.checkAndRequestLocationPermissions(context);
-        if (!permissionGranted) {
-          setState(() {
-            _isGettingLocation = false;
-          });
-          return;
-        }
-
-        Position? position = await _locationService.getCurrentPosition();
-        if (position == null) {
-          throw Exception('No se pudo obtener la posición.');
-        }
-
-        String address = await _locationService.getAddressFromLatLng(
-          position.latitude,
-          position.longitude,
-        );
-
-        String currentDateTime =
-            DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
-
-        await _saveDeliveryData(
-          docEntry: delivery.docEntry,
-          db: delivery.db,
-          latitude: position.latitude,
-          longitude: position.longitude,
-          address: address,
-          dateTime: currentDateTime,
-          audUsuario: userData!.codUsuario,
-        );
-
-        setState(() {
-          delivery.isDelivered = true;
-        });
-
-        await _loadDeliveries();
-
-        _showSuccessSnackBar('Entrega marcada como completada');
-      } catch (e) {
-        print('Error al marcar como entregada: $e');
-        _showErrorSnackBar('Error: $e');
-      } finally {
-        setState(() {
-          _isGettingLocation = false;
-        });
+    setState(() => _isGettingLocation = true);
+    try {
+      if (!await _locationService.checkAndRequestLocationPermissions(context)) {
+        setState(() => _isGettingLocation = false);
+        return;
       }
+
+      Position? position = await _locationService.getCurrentPosition();
+      if (position == null) throw Exception('No se pudo obtener la posición.');
+
+      String address = await _locationService.getAddressFromLatLng(
+        position.latitude,
+        position.longitude,
+      );
+
+      String currentDateTime =
+          DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+
+      await _saveDeliveryData(
+        docEntry: delivery.docEntry,
+        db: delivery.db,
+        latitude: position.latitude,
+        longitude: position.longitude,
+        address: address,
+        dateTime: currentDateTime,
+        audUsuario: userData!.codUsuario,
+      );
+
+      setState(() => delivery.isDelivered = true);
+      await _loadDeliveries();
+      _showSuccessSnackBar('Entrega marcada como completada');
+    } catch (e) {
+      print('Error al marcar como entregada: $e');
+      _showErrorSnackBar('Error: $e');
+    } finally {
+      setState(() => _isGettingLocation = false);
     }
   }
 
@@ -204,6 +162,58 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
     );
   }
 
+  Future<void> _finishDeliveries() async {
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Finalizar Entregas'),
+        content:
+            const Text('¿Estás seguro de que deseas finalizar las entregas?'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Finalizar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() => _isGettingLocation = true);
+      try {
+        Position? position = await _locationService.getCurrentPosition();
+        if (position == null) {
+          throw Exception('No se pudo obtener la posición.');
+        }
+        String address = await _locationService.getAddressFromLatLng(
+            position.latitude, position.longitude);
+        String currentDateTime =
+            DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('deliveriesActive', false);
+
+        // Navegar al DashboardScreen en lugar de DeliveryDriverStartScreen
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+              builder: (context) => const DashboardScreen(
+                    initialIndex: 1,
+                  )),
+          (Route<dynamic> route) => false,
+        );
+      } catch (e) {
+        print('Error al finalizar las entregas: $e');
+        _showErrorSnackBar('Error al finalizar las entregas: $e');
+      } finally {
+        setState(() => _isGettingLocation = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -225,6 +235,11 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
             const CustomLoadingIndicator(message: 'Guardando...'),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _finishDeliveries,
+        label: const Text('Finalizar Mis Entregas'),
+        icon: const Icon(Icons.exit_to_app),
+      ),
     );
   }
 
@@ -234,19 +249,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
     }
 
     if (_groupedDeliveries == null || _groupedDeliveries!.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.inbox_outlined, size: 80, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(
-              'No hay entregas pendientes',
-              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      );
+      return const EmptyDeliveriesWidget();
     }
 
     return RefreshIndicator(
@@ -255,107 +258,11 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
         padding: const EdgeInsets.all(16),
         itemCount: _groupedDeliveries!.length,
         itemBuilder: (context, index) {
-          final groupedDelivery = _groupedDeliveries![index];
-          return _buildDeliveryCard(groupedDelivery);
+          return DeliveryCard(
+            delivery: _groupedDeliveries![index],
+            onMarkAsDelivered: _markAsDelivered,
+          );
         },
-      ),
-    );
-  }
-
-  Widget _buildDeliveryCard(GroupedDelivery delivery) {
-    return Card(
-      elevation: 4,
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        children: [
-          ListTile(
-            contentPadding: const EdgeInsets.all(16),
-            leading: CircleAvatar(
-              backgroundColor: delivery.isDelivered
-                  ? Colors.green
-                  : Theme.of(context).primaryColor,
-              radius: 25,
-              child: Icon(
-                delivery.isDelivered ? Icons.check : Icons.local_shipping,
-                color: Colors.white,
-              ),
-            ),
-            title: Text(
-              delivery.cardName,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-                Text(
-                  'Fecha: ${DateFormat('dd/MM/yyyy').format(delivery.docDate)}',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Dirección: ${delivery.addressEntregaMat}',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Total de productos: ${delivery.items.length}',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ),
-          ExpansionTile(
-            title: const Text('Detalles de productos',
-                style: TextStyle(fontWeight: FontWeight.w500)),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ...delivery.items.map((item) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                  child: Text(item.dscription!,
-                                      style: const TextStyle(fontSize: 14))),
-                              Text('Cantidad: ${item.quantity}',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14)),
-                            ],
-                          ),
-                        )),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (!delivery.isDelivered)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.check, color: Colors.white),
-                label: const Text('Marcar como entregado',
-                    style: TextStyle(color: Colors.white, fontSize: 16)),
-                onPressed: () => _markAsDelivered(delivery),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  minimumSize: const Size(double.infinity, 50),
-                ),
-              ),
-            ),
-        ],
       ),
     );
   }
