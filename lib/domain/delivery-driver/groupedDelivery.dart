@@ -1,12 +1,13 @@
 import 'package:billing/domain/delivery-driver/deliverDriver.dart';
 
 class GroupedDelivery {
-  final int docEntry;
-  final String cardName;
-  final DateTime docDate;
-  final String addressEntregaMat;
-  final List<DeliveryDriver> items;
-  final String db; // Agregamos el campo db
+  int docEntry;
+  String cardName;
+  DateTime docDate;
+  String addressEntregaMat;
+  List<DeliveryDriver> items;
+  String obs;
+  String db; // Agregamos el campo db
   bool isDelivered;
 
   GroupedDelivery({
@@ -15,6 +16,7 @@ class GroupedDelivery {
     required this.docDate,
     required this.addressEntregaMat,
     required this.items,
+    required this.obs,
     required this.db, // Añadimos db como parámetro requerido
     this.isDelivered = false,
   });

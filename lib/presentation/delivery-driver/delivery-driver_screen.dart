@@ -1,3 +1,4 @@
+// delivery_driver_screen.dart
 import 'package:billing/application/auth/local_storage_service.dart';
 import 'package:billing/application/delivery-driver/delivery-driver_service.dart';
 import 'package:billing/application/delivery-driver/location_service.dart';
@@ -47,6 +48,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
         _groupDeliveries(deliveries);
       } else {
         print('User data or employee code is null');
+        _showErrorSnackBar('Datos del usuario no disponibles.');
       }
     } catch (e) {
       print('Error loading deliveries: $e');
@@ -61,14 +63,29 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
     _groupedDeliveries = grouped.entries.map((entry) {
       final items = entry.value;
       return GroupedDelivery(
-        docEntry: entry.key!,
-        cardName: items.first.cardName!,
-        docDate: DateTime.parse(items.first.docDate.toString()),
-        addressEntregaMat: items.first.addressEntregaMat!,
+        docEntry: entry.key ?? 0,
+        cardName: items.first.cardName ?? 'Sin Nombre',
+        docDate: items.first.docDate != null
+            ? DateTime.parse(items.first.docDate.toString())
+            : DateTime.now(),
+        addressEntregaMat:
+            items.first.addressEntregaMat ?? 'Dirección no disponible',
         items: items,
-        db: items.first.db!,
+        db: items.first.db ?? 'DB Desconocida',
+        obs: items.first.obs ?? '', // Asignar observación si existe
       );
     }).toList();
+  }
+
+  // Método para manejar cambios en la observación
+  void _handleObservationChange(int docEntry, String newObservation) {
+    setState(() {
+      final delivery = _groupedDeliveries
+          ?.firstWhereOrNull((delivery) => delivery.docEntry == docEntry);
+      if (delivery != null) {
+        delivery.obs = newObservation;
+      }
+    });
   }
 
   Future<void> _markAsDelivered(GroupedDelivery delivery) async {
@@ -93,6 +110,11 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
       String currentDateTime =
           DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
+      // Verificar si userData no es null
+      if (userData == null) {
+        throw Exception('Datos del usuario no disponibles.');
+      }
+
       await _saveDeliveryData(
         docEntry: delivery.docEntry,
         db: delivery.db,
@@ -101,6 +123,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
         address: address,
         dateTime: currentDateTime,
         audUsuario: userData!.codUsuario,
+        observation: delivery.obs,
       );
 
       setState(() => delivery.isDelivered = true);
@@ -122,6 +145,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
     required String address,
     required String dateTime,
     required int audUsuario,
+    required String observation, // Nuevo parámetro
   }) async {
     try {
       await _deliveryDriverService.saveDeliveryData(
@@ -132,6 +156,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
         address: address,
         dateTime: dateTime,
         audUsuario: audUsuario,
+        obs: observation, // Pasar la observación
       );
       print('Datos de la entrega guardados correctamente.');
     } catch (e) {
@@ -185,14 +210,35 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
     if (confirm == true) {
       setState(() => _isGettingLocation = true);
       try {
+        // Solicita permisos de ubicación
+        bool hasPermission =
+            await _locationService.checkAndRequestLocationPermissions(context);
+        if (!hasPermission) {
+          throw Exception('Permisos de ubicación no concedidos');
+        }
+
+        // Obtiene la posición actual
         Position? position = await _locationService.getCurrentPosition();
         if (position == null) {
           throw Exception('No se pudo obtener la posición.');
         }
+
+        // Obtiene la dirección a partir de la posición usando Dio
         String address = await _locationService.getAddressFromLatLng(
             position.latitude, position.longitude);
+
+        // Imprime los datos en la consola
+        print('Finalizando Entregas');
+        print('Latitude: ${position.latitude}');
+        print('Longitude: ${position.longitude}');
+        print('Address: $address');
+
         String currentDateTime =
             DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+
+        // Si deseas guardar estos datos en algún lugar, puedes implementar una función similar a _saveDeliveryData
+        // Por ejemplo:
+        // await _saveFinishDeliveryData(...);
 
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setBool('deliveriesActive', false);
@@ -258,9 +304,13 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
         padding: const EdgeInsets.all(16),
         itemCount: _groupedDeliveries!.length,
         itemBuilder: (context, index) {
+          final delivery = _groupedDeliveries![index];
           return DeliveryCard(
-            delivery: _groupedDeliveries![index],
+            delivery: delivery,
             onMarkAsDelivered: _markAsDelivered,
+            onObservationChanged: (newObservation) {
+              _handleObservationChange(delivery.docEntry, newObservation);
+            },
           );
         },
       ),
