@@ -201,7 +201,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
               builder: (context) => const DashboardScreen(
-                    initialIndex: 1,
+                    initialIndex: 0,
                   )),
           (Route<dynamic> route) => false,
         );

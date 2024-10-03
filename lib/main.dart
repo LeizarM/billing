@@ -1,12 +1,13 @@
 import 'package:billing/infrastructure/persistence/database_helper.dart';
 import 'package:billing/presentation/auth/change_password_screen.dart';
+import 'package:billing/presentation/auth/login_screen.dart';
 import 'package:billing/presentation/dashboard/dashboard_screen.dart';
+import 'package:billing/presentation/delivery-driver/delivery-driver_screen.dart';
 import 'package:billing/presentation/delivery-driver/delivery_driver_start_screen.dart';
 import 'package:billing/presentation/item/item_list_screen.dart';
 import 'package:billing/presentation/item_detail_storage/item_detail_storage.dart';
 import 'package:flutter/material.dart';
-
-import 'presentation/auth/login_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,13 +17,19 @@ void main() async {
     print('Error initializing database: $e');
     // Manejar el error apropiadamente, quizás mostrando un diálogo al usuario
   }
-  runApp(const MyApp());
+
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  bool deliveriesActive = prefs.getBool('deliveriesActive') ?? false;
+
+  runApp(MyApp(deliveriesActive: deliveriesActive));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool deliveriesActive;
 
-  // This widget is the root of your application.
+  // **Importante:** Elimina 'const' del constructor
+  MyApp({Key? key, required this.deliveriesActive}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -32,7 +39,8 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.indigo,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      initialRoute: '/login',
+      // Establece la ruta inicial basada en el estado de las entregas
+      initialRoute: deliveriesActive ? '/delivery-driver' : '/login',
       routes: {
         '/login': (context) => const LoginScreen(),
         '/dashboard': (context) => const DashboardScreen(
@@ -40,10 +48,10 @@ class MyApp extends StatelessWidget {
             ),
         '/change-password': (context) => const ChangePasswordScreen(),
         '/item-detail-storage': (context) => const ItemDetailStorgate(),
-        //'tprAutorizacion/Autorizacion': (context) => const FamiliesScreen(),
         'trch_choferEntrega/Revision': (context) =>
-            const DeliveryDriverStartScreen(), // const DeliveryDriverScreen(),
-        'tven_ventas/VentasView': (context) => const ItemsScreen()
+            const DeliveryDriverStartScreen(),
+        'tven_ventas/VentasView': (context) => const ItemsScreen(),
+        '/delivery-driver': (context) => const DeliveryDriverScreen(),
       },
     );
   }

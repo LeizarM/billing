@@ -61,6 +61,7 @@ class DeliveryDriverService implements DeliveryDriverRepository {
       required double longitude,
       required String address,
       required String dateTime,
+      //required String obs,
       required int audUsuario}) async {
     final token = await _localStorageService.getToken();
 
@@ -74,6 +75,7 @@ class DeliveryDriverService implements DeliveryDriverRepository {
           'longitud': longitude,
           'direccionEntrega': address,
           'fechaEntrega': dateTime,
+          //'obs': obs,
           'audUsuario': audUsuario
         },
         options: Options(

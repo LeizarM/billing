@@ -1,3 +1,4 @@
+// delivery_driver_start_screen.dart
 import 'package:billing/application/auth/local_storage_service.dart';
 import 'package:billing/application/delivery-driver/delivery-driver_service.dart';
 import 'package:billing/application/delivery-driver/location_service.dart';
@@ -23,7 +24,18 @@ class _DeliveryDriverStartScreenState extends State<DeliveryDriverStartScreen> {
   @override
   void initState() {
     super.initState();
-    // Ya no necesitamos verificar entregas activas aquí
+    _checkDeliveriesStatus();
+  }
+
+  // Verifica el estado de las entregas al iniciar la pantalla
+  Future<void> _checkDeliveriesStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool deliveriesActive = prefs.getBool('deliveriesActive') ?? false;
+    if (deliveriesActive) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const DeliveryDriverScreen()),
+      );
+    }
   }
 
   Future<void> _startDeliveries() async {
@@ -34,9 +46,28 @@ class _DeliveryDriverStartScreenState extends State<DeliveryDriverStartScreen> {
         throw Exception('User data not found');
       }
 
+      // Solicita permisos de ubicación
+      bool hasPermission =
+          await _locationService.checkAndRequestLocationPermissions(context);
+      if (!hasPermission) {
+        throw Exception('Permisos de ubicación no concedidos');
+      }
+
+      // Obtiene la posición actual
       var position = await _locationService.getCurrentPosition();
+      if (position == null) {
+        throw Exception('No se pudo obtener la posición.');
+      }
+
+      // Obtiene la dirección a partir de la posición usando Dio
       String address = await _locationService.getAddressFromLatLng(
-          position!.latitude, position!.longitude);
+          position.latitude, position.longitude);
+
+      // Imprime los datos en la consola
+      print('Latitude: ${position.latitude}');
+      print('Longitude: ${position.longitude}');
+      print('Address: $address');
+
       String currentDateTime =
           DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
