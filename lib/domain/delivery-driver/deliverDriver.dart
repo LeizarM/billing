@@ -26,41 +26,42 @@ class DeliveryDriver {
   String? db;
   String? valido;
   int? fueEntregado;
-  DateTime? fechaEntrega;
+  String? fechaEntrega;
   num? latitud;
   num? longitud;
   String? direccionEntrega;
   String? obs;
   int? audUsuario;
+  int? codEmpleado;
 
-  DeliveryDriver({
-    required this.idEntrega,
-    required this.docEntry,
-    required this.docNum,
-    required this.factura,
-    required this.docDate,
-    required this.docTime,
-    required this.cardCode,
-    required this.cardName,
-    required this.addressEntregaFac,
-    required this.addressEntregaMat,
-    required this.vendedor,
-    required this.uChofer,
-    required this.itemCode,
-    required this.dscription,
-    required this.whsCode,
-    required this.quantity,
-    required this.openQty,
-    required this.db,
-    required this.valido,
-    required this.fueEntregado,
-    required this.fechaEntrega,
-    required this.latitud,
-    required this.longitud,
-    required this.direccionEntrega,
-    required this.obs,
-    required this.audUsuario,
-  });
+  DeliveryDriver(
+      {this.idEntrega,
+      this.docEntry,
+      this.docNum,
+      this.factura,
+      this.docDate,
+      this.docTime,
+      this.cardCode,
+      this.cardName,
+      this.addressEntregaFac,
+      this.addressEntregaMat,
+      this.vendedor,
+      this.uChofer,
+      this.itemCode,
+      this.dscription,
+      this.whsCode,
+      this.quantity,
+      this.openQty,
+      this.db,
+      this.valido,
+      this.fueEntregado,
+      this.fechaEntrega,
+      this.latitud,
+      this.longitud,
+      this.direccionEntrega,
+      this.obs,
+      this.audUsuario,
+      this.codEmpleado});
 
   factory DeliveryDriver.fromJson(Map<String, dynamic> json) => DeliveryDriver(
         idEntrega: json["idEntrega"],
@@ -83,12 +84,13 @@ class DeliveryDriver {
         db: json["db"],
         valido: json["valido"],
         fueEntregado: json["fueEntregado"],
-        fechaEntrega: DateTime.parse(json["fechaEntrega"]),
+        fechaEntrega: json["fechaEntrega"],
         latitud: json["latitud"],
         longitud: json["longitud"],
         direccionEntrega: json["direccionEntrega"],
         obs: json["obs"],
         audUsuario: json["audUsuario"],
+        codEmpleado: json["codEmpleado"],
       );
 
   Map<String, dynamic> toJson() => {
@@ -118,5 +120,6 @@ class DeliveryDriver {
         "direccionEntrega": direccionEntrega,
         "obs": obs,
         "audUsuario": audUsuario,
+        "codEmpleado": codEmpleado,
       };
 }

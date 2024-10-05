@@ -65,8 +65,6 @@ class DeliveryDriverService implements DeliveryDriverRepository {
       required int audUsuario}) async {
     final token = await _localStorageService.getToken();
 
-    debugPrint("la obs es ========================" + obs);
-
     try {
       final response = await _dio.post(
         '$_baseUrl/registro-entrega-chofer',
@@ -89,6 +87,71 @@ class DeliveryDriverService implements DeliveryDriverRepository {
       if (response.statusCode == 201) {
         // Éxito, datos guardados
         debugPrint('Datos de la entrega guardados correctamente.');
+      } else {
+        // Manejar errores del servidor
+        throw Exception(
+            'El servidor respondió con código de estado: ${response.statusCode}. Mensaje: ${response.data}');
+      }
+    } on DioException catch (e) {
+      debugPrint('DioException: ${e.toString()}');
+      throw Exception('Error de red: ${e.message}');
+    } catch (e) {
+      debugPrint('Error inesperado: $e');
+      throw Exception('Error inesperado: $e');
+    }
+  }
+
+  @override
+  Future<void> registerStartDelivery(DeliveryDriver mb) async {
+    final token = await _localStorageService.getToken();
+
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/registro-inicio-fin-entrega',
+        data: mb,
+        options: Options(
+          contentType: 'application/json',
+          headers: {'Authorization': 'Bearer $token'},
+          validateStatus: (status) => status! < 500,
+        ),
+      );
+
+      if (response.statusCode == 201) {
+        // Éxito, datos guardados
+        debugPrint('Datos de la entrega de inicio guardados correctamente.');
+      } else {
+        // Manejar errores del servidor
+        throw Exception(
+            'El servidor respondió con código de estado: ${response.statusCode}. Mensaje: ${response.data}');
+      }
+    } on DioException catch (e) {
+      debugPrint('DioException: ${e.toString()}');
+      throw Exception('Error de red: ${e.message}');
+    } catch (e) {
+      debugPrint('Error inesperado: $e');
+      throw Exception('Error inesperado: $e');
+    }
+  }
+
+  @override
+  Future<void> registerFinishDelivery(DeliveryDriver mb) async {
+    final token = await _localStorageService.getToken();
+
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/registro-inicio-fin-entrega',
+        data: mb,
+        options: Options(
+          contentType: 'application/json',
+          headers: {'Authorization': 'Bearer $token'},
+          validateStatus: (status) => status! < 500,
+        ),
+      );
+
+      if (response.statusCode == 201) {
+        // Éxito, datos guardados
+        debugPrint(
+            'Datos de la finalizacion de entregas guardados correctamente.');
       } else {
         // Manejar errores del servidor
         throw Exception(

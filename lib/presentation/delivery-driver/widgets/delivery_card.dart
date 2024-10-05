@@ -1,5 +1,6 @@
 // File: lib/presentation/delivery-driver/widgets/delivery_card.dart
 import 'package:billing/domain/delivery-driver/groupedDelivery.dart';
+import 'package:billing/presentation/delivery-driver/widgets/delivery_products_expansion_tile.dart';
 import 'package:flutter/material.dart';
 
 import 'delivery_card_header.dart';
@@ -28,6 +29,7 @@ class DeliveryCard extends StatelessWidget {
               onObservationChanged(value);
             },
           ),
+          DeliveryProductsExpansionTile(items: delivery.items),
           // Aquí podrías agregar más detalles o acciones relacionadas con la entrega
           Padding(
             padding: const EdgeInsets.all(16.0),

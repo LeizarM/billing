@@ -40,7 +40,8 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       // Establece la ruta inicial basada en el estado de las entregas
-      initialRoute: deliveriesActive ? '/delivery-driver' : '/login',
+      //initialRoute: deliveriesActive ? '/delivery-driver' : '/login',
+      initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginScreen(),
         '/dashboard': (context) => const DashboardScreen(

@@ -5,6 +5,7 @@ import 'package:billing/application/delivery-driver/location_service.dart';
 import 'package:billing/domain/auth/login.dart';
 import 'package:billing/domain/delivery-driver/deliverDriver.dart';
 import 'package:billing/domain/delivery-driver/groupedDelivery.dart';
+import 'package:billing/presentation/auth/login_screen.dart';
 import 'package:billing/presentation/dashboard/dashboard_screen.dart';
 import 'package:billing/presentation/delivery-driver/utils/dialogs.dart';
 import 'package:billing/presentation/delivery-driver/widgets/customLoadingIndicator.dart';
@@ -14,6 +15,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DeliveryDriverScreen extends StatefulWidget {
@@ -42,6 +44,23 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
     setState(() => _isLoading = true);
     try {
       userData = await _localStorageService.getUser();
+
+      final token = await _localStorageService.getToken();
+
+      bool expired = isTokenExpired(token!);
+      debugPrint(expired.toString());
+      if (expired) {
+        //Navigator.of(context).pushReplacementNamed('/login');
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('deliveriesActive', true);
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => const LoginScreen(),
+          ),
+          (Route<dynamic> route) => false,
+        );
+      }
+
       if (userData != null) {
         final deliveries =
             await _deliveryDriverService.obtainDelivery(userData!.codEmpleado);
@@ -56,6 +75,11 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  bool isTokenExpired(String token) {
+    bool hasExpired = JwtDecoder.isExpired(token);
+    return hasExpired;
   }
 
   void _groupDeliveries(List<DeliveryDriver> deliveries) {
@@ -242,6 +266,25 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
 
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setBool('deliveriesActive', false);
+
+        DeliveryDriver temp = DeliveryDriver();
+
+        temp.docEntry = 0;
+        temp.docNum = 0;
+        temp.factura = 0;
+        temp.cardName = "Fin Entregas";
+        temp.codEmpleado = userData?.codEmpleado;
+        temp.valido = 'V';
+        temp.db = 'ALL';
+        temp.direccionEntrega = address;
+        temp.fueEntregado = 1;
+        temp.fechaEntrega = currentDateTime;
+        temp.latitud = position.latitude;
+        temp.longitud = position.longitude;
+        temp.obs = "Finalizando Entregas";
+        temp.audUsuario = userData?.codUsuario;
+
+        await _deliveryDriverService.registerFinishDelivery(temp);
 
         // Navegar al DashboardScreen en lugar de DeliveryDriverStartScreen
         Navigator.of(context).pushAndRemoveUntil(

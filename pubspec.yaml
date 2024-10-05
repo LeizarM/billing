@@ -46,6 +46,7 @@ dependencies:
   skeletonizer: ^1.4.2
   geolocator: ^13.0.1
   geocoding: ^3.0.0
+  jwt_decoder: ^2.0.1
 
 flutter_icons:
   android: true

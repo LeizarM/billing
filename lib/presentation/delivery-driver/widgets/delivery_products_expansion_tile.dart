@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 class DeliveryProductsExpansionTile extends StatelessWidget {
   final List<DeliveryDriver> items;
 
-  const DeliveryProductsExpansionTile({Key? key, required this.items})
-      : super(key: key);
+  const DeliveryProductsExpansionTile({super.key, required this.items});
 
   @override
   Widget build(BuildContext context) {

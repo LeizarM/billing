@@ -2,9 +2,12 @@
 import 'package:billing/application/auth/local_storage_service.dart';
 import 'package:billing/application/delivery-driver/delivery-driver_service.dart';
 import 'package:billing/application/delivery-driver/location_service.dart';
+import 'package:billing/domain/auth/login.dart';
+import 'package:billing/domain/delivery-driver/deliverDriver.dart';
 import 'package:billing/presentation/delivery-driver/delivery-driver_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DeliveryDriverStartScreen extends StatefulWidget {
@@ -21,10 +24,17 @@ class _DeliveryDriverStartScreenState extends State<DeliveryDriverStartScreen> {
   final LocationService _locationService = LocationService();
   bool _isLoading = false;
 
+  Login? userData;
+
   @override
   void initState() {
     super.initState();
     _checkDeliveriesStatus();
+  }
+
+  bool isTokenExpired(String token) {
+    bool hasExpired = JwtDecoder.isExpired(token);
+    return hasExpired;
   }
 
   // Verifica el estado de las entregas al iniciar la pantalla
@@ -77,6 +87,29 @@ class _DeliveryDriverStartScreenState extends State<DeliveryDriverStartScreen> {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const DeliveryDriverScreen()),
       );
+
+      userData = await _localStorageService.getUser();
+
+      DeliveryDriver temp = DeliveryDriver();
+
+      debugPrint(currentDateTime);
+
+      temp.docEntry = -1;
+      temp.docNum = 0;
+      temp.factura = 0;
+      temp.cardName = "Inicio de Entrega";
+      temp.codEmpleado = userData?.codEmpleado;
+      temp.valido = 'V';
+      temp.db = 'ALL';
+      temp.direccionEntrega = address;
+      temp.fueEntregado = 1;
+      temp.fechaEntrega = currentDateTime;
+      temp.latitud = position.latitude;
+      temp.longitud = position.longitude;
+      temp.obs = "Iniciando Entregas";
+      temp.audUsuario = userData?.codUsuario;
+
+      await _deliveryDriverService.registerStartDelivery(temp);
     } catch (e) {
       print('Error al iniciar las entregas: $e');
       ScaffoldMessenger.of(context).showSnackBar(
