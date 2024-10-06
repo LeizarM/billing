@@ -41,40 +41,70 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
   }
 
   Future<void> _loadDeliveries() async {
-    setState(() => _isLoading = true);
+    if (!mounted)
+      return; // Verifica si el widget aún está montado antes de continuar
+
+    _safeSetState(() => _isLoading = true);
     try {
       userData = await _localStorageService.getUser();
 
       final token = await _localStorageService.getToken();
 
-      bool expired = isTokenExpired(token!);
+      if (token == null) {
+        _handleExpiredToken();
+        return;
+      }
+
+      bool expired = isTokenExpired(token);
       debugPrint(expired.toString());
       if (expired) {
-        //Navigator.of(context).pushReplacementNamed('/login');
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('deliveriesActive', true);
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (context) => const LoginScreen(),
-          ),
-          (Route<dynamic> route) => false,
-        );
+        await _handleExpiredToken();
+        return;
       }
 
       if (userData != null) {
         final deliveries =
             await _deliveryDriverService.obtainDelivery(userData!.codEmpleado);
-        _groupDeliveries(deliveries);
+        if (mounted) {
+          // Verifica de nuevo si el widget está montado antes de actualizar el estado
+          _groupDeliveries(deliveries);
+        }
       } else {
         print('User data or employee code is null');
-        _showErrorSnackBar('Datos del usuario no disponibles.');
+        if (mounted) {
+          // Verifica si el widget está montado antes de mostrar el error
+          _showErrorSnackBar('Datos del usuario no disponibles.');
+        }
       }
     } catch (e) {
       print('Error loading deliveries: $e');
-      _showErrorSnackBar('Error al cargar las entregas: $e');
+      if (mounted) {
+        // Verifica si el widget está montado antes de mostrar el error
+        _showErrorSnackBar('Error al cargar las entregas: $e');
+      }
     } finally {
-      setState(() => _isLoading = false);
+      _safeSetState(() => _isLoading = false);
     }
+  }
+
+// Método auxiliar para manejar el token expirado
+  Future<void> _handleExpiredToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('deliveriesActive', true);
+    if (mounted) {
+      // Verifica si el widget está montado antes de navegar
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => const LoginScreen(),
+        ),
+        (Route<dynamic> route) => false,
+      );
+    }
+  }
+
+// Método auxiliar para actualizar el estado de forma segura
+  void _safeSetState(VoidCallback fn) {
+    if (mounted) setState(fn);
   }
 
   bool isTokenExpired(String token) {
