@@ -46,8 +46,6 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
 
     _safeSetState(() => _isLoading = true);
     try {
-      userData = await _localStorageService.getUser();
-
       final token = await _localStorageService.getToken();
 
       if (token == null) {
@@ -61,6 +59,8 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
         await _handleExpiredToken();
         return;
       }
+
+      userData = await _localStorageService.getUser();
 
       if (userData != null) {
         final deliveries =
@@ -90,8 +90,9 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
 // Método auxiliar para manejar el token expirado
   Future<void> _handleExpiredToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('deliveriesActive', true);
+    await prefs.setBool('deliveriesActive', false);
     if (mounted) {
+      debugPrint("Redireccionando a Login ....");
       // Verifica si el widget está montado antes de navegar
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
