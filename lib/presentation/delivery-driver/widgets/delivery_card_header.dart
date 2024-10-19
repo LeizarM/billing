@@ -8,10 +8,10 @@ class DeliveryCardHeader extends StatefulWidget {
   final Function(String) onObservationChanged; // Callback para manejar cambios
 
   const DeliveryCardHeader({
-    Key? key,
+    super.key,
     required this.delivery,
     required this.onObservationChanged, // Requerir el callback
-  }) : super(key: key);
+  });
 
   @override
   _DeliveryCardHeaderState createState() => _DeliveryCardHeaderState();
@@ -24,7 +24,7 @@ class _DeliveryCardHeaderState extends State<DeliveryCardHeader> {
   void initState() {
     super.initState();
     _observationController =
-        TextEditingController(text: widget.delivery.obs ?? '');
+        TextEditingController(text: widget.delivery.obs);
   }
 
   @override
@@ -60,7 +60,7 @@ class _DeliveryCardHeaderState extends State<DeliveryCardHeader> {
             style: TextStyle(color: Colors.grey[600]),
           ),
           const SizedBox(height: 4),
-          Text(
+          SelectableText(
             'Dirección: ${widget.delivery.addressEntregaMat}',
             style: TextStyle(color: Colors.grey[600]),
           ),

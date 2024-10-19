@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 class ProductItem extends StatelessWidget {
   final DeliveryDriver item;
 
-  const ProductItem({Key? key, required this.item}) : super(key: key);
+  const ProductItem({super.key, required this.item});
 
   @override
   Widget build(BuildContext context) {

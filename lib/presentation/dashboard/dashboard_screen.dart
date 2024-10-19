@@ -6,8 +6,7 @@ import 'package:billing/presentation/item/item_list_screen.dart';
 import 'package:flutter/material.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({Key? key, required this.initialIndex})
-      : super(key: key);
+  const DashboardScreen({super.key, required this.initialIndex});
 
   final int initialIndex;
 

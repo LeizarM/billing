@@ -11,7 +11,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DeliveryDriverStartScreen extends StatefulWidget {
-  const DeliveryDriverStartScreen({Key? key}) : super(key: key);
+  const DeliveryDriverStartScreen({super.key});
 
   @override
   _DeliveryDriverStartScreenState createState() =>
@@ -98,6 +98,9 @@ class _DeliveryDriverStartScreenState extends State<DeliveryDriverStartScreen> {
       temp.docNum = 0;
       temp.factura = 0;
       temp.cardName = "Inicio de Entrega";
+      temp.cardCode = " ";
+      temp.addressEntregaFac = "";
+      temp.addressEntregaMat = "";
       temp.codEmpleado = userData?.codEmpleado;
       temp.valido = 'V';
       temp.db = 'ALL';

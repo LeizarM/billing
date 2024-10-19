@@ -19,7 +19,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DeliveryDriverScreen extends StatefulWidget {
-  const DeliveryDriverScreen({Key? key}) : super(key: key);
+  const DeliveryDriverScreen({super.key});
 
   @override
   State<DeliveryDriverScreen> createState() => _DeliveryDriverScreenState();
@@ -41,8 +41,9 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
   }
 
   Future<void> _loadDeliveries() async {
-    if (!mounted)
+    if (!mounted) {
       return; // Verifica si el widget aún está montado antes de continuar
+    }
 
     _safeSetState(() => _isLoading = true);
     try {
@@ -303,6 +304,9 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
         temp.docEntry = 0;
         temp.docNum = 0;
         temp.factura = 0;
+        temp.cardCode = " ";
+        temp.addressEntregaFac = "";
+        temp.addressEntregaMat = "";
         temp.cardName = "Fin Entregas";
         temp.codEmpleado = userData?.codEmpleado;
         temp.valido = 'V';

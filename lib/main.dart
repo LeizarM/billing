@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
   final bool deliveriesActive;
 
   // **Importante:** Elimina 'const' del constructor
-  MyApp({Key? key, required this.deliveriesActive}) : super(key: key);
+  const MyApp({super.key, required this.deliveriesActive});
 
   @override
   Widget build(BuildContext context) {

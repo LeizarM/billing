@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 class DeliveryActionButton extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const DeliveryActionButton({Key? key, required this.onPressed})
-      : super(key: key);
+  const DeliveryActionButton({super.key, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {

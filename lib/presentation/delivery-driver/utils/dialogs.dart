@@ -15,7 +15,6 @@ Future<bool?> showConfirmationDialog(BuildContext context) {
           onPressed: () => Navigator.of(context).pop(false),
         ),
         ElevatedButton(
-          child: const Text('Confirmar'),
           onPressed: () => Navigator.of(context).pop(true),
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).primaryColor,
@@ -23,6 +22,7 @@ Future<bool?> showConfirmationDialog(BuildContext context) {
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
           ),
+          child: const Text('Confirmar'),
         ),
       ],
     ),

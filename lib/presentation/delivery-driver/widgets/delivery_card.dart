@@ -11,11 +11,11 @@ class DeliveryCard extends StatelessWidget {
   final Function(String) onObservationChanged; // Nuevo callback
 
   const DeliveryCard({
-    Key? key,
+    super.key,
     required this.delivery,
     required this.onMarkAsDelivered,
     required this.onObservationChanged, // Requerir el callback
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
