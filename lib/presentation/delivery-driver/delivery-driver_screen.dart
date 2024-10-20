@@ -1,4 +1,3 @@
-// delivery_driver_screen.dart
 import 'package:billing/application/auth/local_storage_service.dart';
 import 'package:billing/application/delivery-driver/delivery-driver_service.dart';
 import 'package:billing/application/delivery-driver/location_service.dart';
@@ -17,6 +16,10 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:logger/logger.dart';
+
+// Initialize logger
+final logger = Logger();
 
 class DeliveryDriverScreen extends StatefulWidget {
   const DeliveryDriverScreen({super.key});
@@ -42,7 +45,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
 
   Future<void> _loadDeliveries() async {
     if (!mounted) {
-      return; // Verifica si el widget aún está montado antes de continuar
+      return;
     }
 
     _safeSetState(() => _isLoading = true);
@@ -55,7 +58,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
       }
 
       bool expired = isTokenExpired(token);
-      debugPrint(expired.toString());
+      logger.d(expired.toString());
       if (expired) {
         await _handleExpiredToken();
         return;
@@ -67,20 +70,17 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
         final deliveries =
             await _deliveryDriverService.obtainDelivery(userData!.codEmpleado);
         if (mounted) {
-          // Verifica de nuevo si el widget está montado antes de actualizar el estado
           _groupDeliveries(deliveries);
         }
       } else {
-        print('User data or employee code is null');
+        logger.w('User data or employee code is null');
         if (mounted) {
-          // Verifica si el widget está montado antes de mostrar el error
           _showErrorSnackBar('Datos del usuario no disponibles.');
         }
       }
     } catch (e) {
-      print('Error loading deliveries: $e');
+      logger.e('Error loading deliveries: $e');
       if (mounted) {
-        // Verifica si el widget está montado antes de mostrar el error
         _showErrorSnackBar('Error al cargar las entregas: $e');
       }
     } finally {
@@ -88,13 +88,11 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
     }
   }
 
-// Método auxiliar para manejar el token expirado
   Future<void> _handleExpiredToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('deliveriesActive', false);
     if (mounted) {
-      debugPrint("Redireccionando a Login ....");
-      // Verifica si el widget está montado antes de navegar
+      logger.i("Redireccionando a Login ....");
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (context) => const LoginScreen(),
@@ -104,7 +102,6 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
     }
   }
 
-// Método auxiliar para actualizar el estado de forma segura
   void _safeSetState(VoidCallback fn) {
     if (mounted) setState(fn);
   }
@@ -128,12 +125,11 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
             items.first.addressEntregaMat ?? 'Dirección no disponible',
         items: items,
         db: items.first.db ?? 'DB Desconocida',
-        obs: items.first.obs ?? '', // Asignar observación si existe
+        obs: items.first.obs ?? '',
       );
     }).toList();
   }
 
-  // Método para manejar cambios en la observación
   void _handleObservationChange(int docEntry, String newObservation) {
     setState(() {
       final delivery = _groupedDeliveries
@@ -166,7 +162,6 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
       String currentDateTime =
           DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
-      // Verificar si userData no es null
       if (userData == null) {
         throw Exception('Datos del usuario no disponibles.');
       }
@@ -186,7 +181,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
       await _loadDeliveries();
       _showSuccessSnackBar('Entrega marcada como completada');
     } catch (e) {
-      print('Error al marcar como entregada: $e');
+      logger.e('Error al marcar como entregada: $e');
       _showErrorSnackBar('Error: $e');
     } finally {
       setState(() => _isGettingLocation = false);
@@ -201,7 +196,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
     required String address,
     required String dateTime,
     required int audUsuario,
-    required String observation, // Nuevo parámetro
+    required String observation,
   }) async {
     try {
       await _deliveryDriverService.saveDeliveryData(
@@ -212,11 +207,11 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
         address: address,
         dateTime: dateTime,
         audUsuario: audUsuario,
-        obs: observation, // Pasar la observación
+        obs: observation,
       );
-      print('Datos de la entrega guardados correctamente.');
+      logger.i('Datos de la entrega guardados correctamente.');
     } catch (e) {
-      print('Error al guardar los datos de la entrega: $e');
+      logger.e('Error al guardar los datos de la entrega: $e');
       _showErrorSnackBar('Error al guardar los datos de la entrega');
     }
   }
@@ -266,35 +261,27 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
     if (confirm == true) {
       setState(() => _isGettingLocation = true);
       try {
-        // Solicita permisos de ubicación
         bool hasPermission =
             await _locationService.checkAndRequestLocationPermissions(context);
         if (!hasPermission) {
           throw Exception('Permisos de ubicación no concedidos');
         }
 
-        // Obtiene la posición actual
         Position? position = await _locationService.getCurrentPosition();
         if (position == null) {
           throw Exception('No se pudo obtener la posición.');
         }
 
-        // Obtiene la dirección a partir de la posición usando Dio
         String address = await _locationService.getAddressFromLatLng(
             position.latitude, position.longitude);
 
-        // Imprime los datos en la consola
-        print('Finalizando Entregas');
-        print('Latitude: ${position.latitude}');
-        print('Longitude: ${position.longitude}');
-        print('Address: $address');
+        logger.i('Finalizando Entregas');
+        logger.i('Latitude: ${position.latitude}');
+        logger.i('Longitude: ${position.longitude}');
+        logger.i('Address: $address');
 
         String currentDateTime =
             DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
-
-        // Si deseas guardar estos datos en algún lugar, puedes implementar una función similar a _saveDeliveryData
-        // Por ejemplo:
-        // await _saveFinishDeliveryData(...);
 
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setBool('deliveriesActive', false);
@@ -321,7 +308,6 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
 
         await _deliveryDriverService.registerFinishDelivery(temp);
 
-        // Navegar al DashboardScreen en lugar de DeliveryDriverStartScreen
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
               builder: (context) => const DashboardScreen(
@@ -330,7 +316,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
           (Route<dynamic> route) => false,
         );
       } catch (e) {
-        print('Error al finalizar las entregas: $e');
+        logger.e('Error al finalizar las entregas: $e');
         _showErrorSnackBar('Error al finalizar las entregas: $e');
       } finally {
         setState(() => _isGettingLocation = false);
