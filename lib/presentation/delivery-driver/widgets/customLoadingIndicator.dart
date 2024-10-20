@@ -1,4 +1,4 @@
-// lib/presentation/widgets/custom_loading_indicator.dart
+// customLoadingIndicator.dart
 import 'package:flutter/material.dart';
 
 class CustomLoadingIndicator extends StatelessWidget {
@@ -8,40 +8,31 @@ class CustomLoadingIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black38,
+    return Container(
+      color: Colors.black54,
       child: Center(
-        child: Container(
-          width: 200,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 10,
-                offset: Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).primaryColor,
+        child: Card(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          elevation: 8,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.teal),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                message,
-                style: TextStyle(
-                  color: Theme.of(context).primaryColor,
-                  fontSize: 16,
+                const SizedBox(height: 20),
+                Text(
+                  message,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.teal[800],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

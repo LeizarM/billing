@@ -12,6 +12,7 @@ import 'package:billing/presentation/delivery-driver/widgets/delivery_card.dart'
 import 'package:billing/presentation/delivery-driver/widgets/empty_deliveries_widget.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // Importa compute
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
@@ -20,6 +21,26 @@ import 'package:logger/logger.dart';
 
 // Initialize logger
 final logger = Logger();
+
+// Define una función de nivel superior para agrupar entregas
+List<GroupedDelivery> groupDeliveries(List<DeliveryDriver> deliveries) {
+  final grouped = groupBy(deliveries, (DeliveryDriver d) => d.docEntry);
+  return grouped.entries.map((entry) {
+    final items = entry.value;
+    return GroupedDelivery(
+      docEntry: entry.key ?? 0,
+      cardName: items.first.cardName ?? 'Sin Nombre',
+      docDate: items.first.docDate != null
+          ? DateTime.parse(items.first.docDate.toString())
+          : DateTime.now(),
+      addressEntregaMat:
+          items.first.addressEntregaMat ?? 'Dirección no disponible',
+      items: items,
+      db: items.first.db ?? 'DB Desconocida',
+      obs: items.first.obs ?? '',
+    );
+  }).toList();
+}
 
 class DeliveryDriverScreen extends StatefulWidget {
   const DeliveryDriverScreen({super.key});
@@ -69,8 +90,13 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
       if (userData != null) {
         final deliveries =
             await _deliveryDriverService.obtainDelivery(userData!.codEmpleado);
+
         if (mounted) {
-          _groupDeliveries(deliveries);
+          // Usa compute para agrupar las entregas en un isolate separado
+          final grouped = await compute(groupDeliveries, deliveries);
+          _safeSetState(() {
+            _groupedDeliveries = grouped;
+          });
         }
       } else {
         logger.w('User data or employee code is null');
@@ -109,25 +135,6 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
   bool isTokenExpired(String token) {
     bool hasExpired = JwtDecoder.isExpired(token);
     return hasExpired;
-  }
-
-  void _groupDeliveries(List<DeliveryDriver> deliveries) {
-    final grouped = groupBy(deliveries, (DeliveryDriver d) => d.docEntry);
-    _groupedDeliveries = grouped.entries.map((entry) {
-      final items = entry.value;
-      return GroupedDelivery(
-        docEntry: entry.key ?? 0,
-        cardName: items.first.cardName ?? 'Sin Nombre',
-        docDate: items.first.docDate != null
-            ? DateTime.parse(items.first.docDate.toString())
-            : DateTime.now(),
-        addressEntregaMat:
-            items.first.addressEntregaMat ?? 'Dirección no disponible',
-        items: items,
-        db: items.first.db ?? 'DB Desconocida',
-        obs: items.first.obs ?? '',
-      );
-    }).toList();
   }
 
   void _handleObservationChange(int docEntry, String newObservation) {
@@ -220,9 +227,10 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.redAccent,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -234,6 +242,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
         backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -327,17 +336,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Entregas Pendientes',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadDeliveries,
-          ),
-        ],
-      ),
+      appBar: _buildAppBar(),
       body: Stack(
         children: [
           _buildBody(),
@@ -349,13 +348,46 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
         onPressed: _finishDeliveries,
         label: const Text('Finalizar Mis Entregas'),
         icon: const Icon(Icons.exit_to_app),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
+    );
+  }
+
+  AppBar _buildAppBar() {
+    return AppBar(
+      title: const Text(
+        'Entregas Pendientes',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      elevation: 2,
+      backgroundColor: Colors.white,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          onPressed: _loadDeliveries,
+          tooltip: 'Actualizar',
+        ),
+      ],
+      // Puedes agregar un fondo de gradiente si lo deseas
+      // flexibleSpace: Container(
+      //   decoration: BoxDecoration(
+      //     gradient: LinearGradient(
+      //       colors: [Colors.teal, Colors.tealAccent],
+      //       begin: Alignment.topLeft,
+      //       end: Alignment.bottomRight,
+      //     ),
+      //   ),
+      // ),
     );
   }
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.teal),
+        ),
+      );
     }
 
     if (_groupedDeliveries == null || _groupedDeliveries!.isEmpty) {
@@ -365,16 +397,20 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
     return RefreshIndicator(
       onRefresh: _loadDeliveries,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         itemCount: _groupedDeliveries!.length,
         itemBuilder: (context, index) {
           final delivery = _groupedDeliveries![index];
-          return DeliveryCard(
-            delivery: delivery,
-            onMarkAsDelivered: _markAsDelivered,
-            onObservationChanged: (newObservation) {
-              _handleObservationChange(delivery.docEntry, newObservation);
-            },
+          return AnimatedOpacity(
+            opacity: delivery.isDelivered ? 0.5 : 1.0,
+            duration: const Duration(milliseconds: 500),
+            child: DeliveryCard(
+              delivery: delivery,
+              onMarkAsDelivered: _markAsDelivered,
+              onObservationChanged: (newObservation) {
+                _handleObservationChange(delivery.docEntry, newObservation);
+              },
+            ),
           );
         },
       ),
