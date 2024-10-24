@@ -35,53 +35,114 @@ class _DeliveryCardHeaderState extends State<DeliveryCardHeader> {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.all(16),
-      leading: CircleAvatar(
-        backgroundColor: widget.delivery.isDelivered
-            ? Colors.green
-            : Theme.of(context).primaryColor,
-        radius: 25,
-        child: Icon(
-          widget.delivery.isDelivered ? Icons.check : Icons.local_shipping,
-          color: Colors.white,
-        ),
-      ),
-      title: Text(
-        widget.delivery.cardName,
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-      ),
-      subtitle: Column(
+    final isDelivered = widget.delivery.isDelivered;
+    final primaryColor = Theme.of(context).primaryColor;
+    const deliveredColor = Colors.green;
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 8),
-          Text(
-            'Fecha: ${DateFormat('dd/MM/yyyy').format(widget.delivery.docDate)}',
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 4),
-          SelectableText(
-            'Dirección: ${widget.delivery.addressEntregaMat}',
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Total de productos: ${widget.delivery.items.length}',
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _observationController,
-            decoration: InputDecoration(
-              labelText: 'Observaciones',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+          // Encabezado con Avatar e Información Principal
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Avatar
+              CircleAvatar(
+                backgroundColor:
+                    isDelivered ? deliveredColor : primaryColor,
+                radius: 25,
+                child: Icon(
+                  isDelivered ? Icons.check : Icons.local_shipping,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
-            ),
-            maxLines: 3,
-            onChanged: (value) {
-              widget.onObservationChanged(value); // Notificar al padre
-            },
+              const SizedBox(width: 16),
+              // Información Principal
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.delivery.cardName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Tipo: ${widget.delivery.tipo}',
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Fecha: ${DateFormat('dd/MM/yyyy').format(widget.delivery.docDate)}',
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Detalles de Entrega
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Dirección:',
+                style: TextStyle(
+                  color: Colors.grey[800],
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              SelectableText(
+                widget.delivery.addressEntregaMat,
+                style: TextStyle(
+                  color: Colors.grey[800],
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Total de productos: ${widget.delivery.items.length}',
+                style: TextStyle(
+                  color: Colors.grey[700],
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Campo de Observaciones
+              TextField(
+                controller: _observationController,
+                decoration: InputDecoration(
+                  labelText: 'Observaciones',
+                  labelStyle: TextStyle(color: primaryColor),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      vertical: 12, horizontal: 16),
+                ),
+                maxLines: 3,
+                onChanged: (value) {
+                  widget.onObservationChanged(value); // Notificar al padre
+                },
+              ),
+            ],
           ),
         ],
       ),

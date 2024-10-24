@@ -37,6 +37,7 @@ List<GroupedDelivery> groupDeliveries(List<DeliveryDriver> deliveries) {
           items.first.addressEntregaMat ?? 'Dirección no disponible',
       items: items,
       db: items.first.db ?? 'DB Desconocida',
+      tipo: items.first.tipo ?? 'Tipo Desconocido',
       obs: items.first.obs ?? '',
     );
   }).toList();
@@ -88,8 +89,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
       userData = await _localStorageService.getUser();
 
       if (userData != null) {
-        final deliveries =
-            await _deliveryDriverService.obtainDelivery(userData!.codEmpleado);
+        List<DeliveryDriver> deliveries =  await _deliveryDriverService.obtainDelivery(userData!.codEmpleado);
 
         if (mounted) {
           // Usa compute para agrupar las entregas en un isolate separado

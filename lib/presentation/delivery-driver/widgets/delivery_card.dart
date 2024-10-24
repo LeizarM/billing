@@ -20,22 +20,38 @@ class DeliveryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         children: [
           DeliveryCardHeader(
             delivery: delivery,
-            onObservationChanged: (value) {
-              onObservationChanged(value);
-            },
+            onObservationChanged: onObservationChanged,
           ),
+          const Divider(height: 1),
           DeliveryProductsExpansionTile(items: delivery.items),
-          // Aquí podrías agregar más detalles o acciones relacionadas con la entrega
+          // Acciones relacionadas con la entrega
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
+            child: ElevatedButton.icon(
               onPressed: () => onMarkAsDelivered(delivery),
-              child: const Text('Marcar como Entregada'),
+              icon: const Icon(Icons.check_circle_outline),
+              label: const Text('Marcar como Entregada'),
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                //backgroundColor: Theme.of(context).primaryColor,
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ],

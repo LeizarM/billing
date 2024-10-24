@@ -9,6 +9,7 @@ class DeliveryDriver {
   int? idEntrega;
   int? docEntry;
   int? docNum;
+  int? docNumF;
   int? factura;
   DateTime? docDate;
   String? docTime;
@@ -25,6 +26,10 @@ class DeliveryDriver {
   int? openQty;
   String? db;
   String? valido;
+  double? peso;
+  String? cochePlaca;
+  String? prioridad;
+  String? tipo;
   int? fueEntregado;
   String? fechaEntrega;
   num? latitud;
@@ -38,6 +43,7 @@ class DeliveryDriver {
       {this.idEntrega,
       this.docEntry,
       this.docNum,
+      this.docNumF,
       this.factura,
       this.docDate,
       this.docTime,
@@ -54,6 +60,10 @@ class DeliveryDriver {
       this.openQty,
       this.db,
       this.valido,
+      this.peso,
+      this.cochePlaca,
+      this.prioridad,
+      this.tipo,
       this.fueEntregado,
       this.fechaEntrega,
       this.latitud,
@@ -67,6 +77,7 @@ class DeliveryDriver {
         idEntrega: json["idEntrega"],
         docEntry: json["docEntry"],
         docNum: json["docNum"],
+        docNumF: json["docNumF"],
         factura: json["factura"],
         docDate: DateTime.parse(json["docDate"]),
         docTime: json["docTime"],
@@ -83,6 +94,10 @@ class DeliveryDriver {
         openQty: json["openQty"],
         db: json["db"],
         valido: json["valido"],
+        peso: json["peso"],
+        cochePlaca: json["cochePlaca"],
+        prioridad: json["prioridad"],
+        tipo: json["tipo"],
         fueEntregado: json["fueEntregado"],
         fechaEntrega: json["fechaEntrega"],
         latitud: json["latitud"],
@@ -97,6 +112,7 @@ class DeliveryDriver {
         "idEntrega": idEntrega,
         "docEntry": docEntry,
         "docNum": docNum,
+        "docNumF": docNumF,
         "factura": factura,
         "docDate": docDate,
         "docTime": docTime,
@@ -113,6 +129,10 @@ class DeliveryDriver {
         "openQty": openQty,
         "db": db,
         "valido": valido,
+        "peso": peso,
+        "cochePlaca": cochePlaca,
+        "prioridad": prioridad,
+        "tipo": tipo,
         "fueEntregado": fueEntregado,
         "fechaEntrega": fechaEntrega,
         "latitud": latitud,
