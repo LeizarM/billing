@@ -37,7 +37,13 @@ class DeliveryDriver {
   String? direccionEntrega;
   String? obs;
   int? audUsuario;
+
+
+  String? fechaNota;
+  String? nombreCompleto;
+  int?  diferenciaMinutos;
   int? codEmpleado;
+  String? cargo;
 
   DeliveryDriver(
       {this.idEntrega,
@@ -71,7 +77,11 @@ class DeliveryDriver {
       this.direccionEntrega,
       this.obs,
       this.audUsuario,
-      this.codEmpleado});
+      this.fechaNota,
+      this.nombreCompleto,
+      this.diferenciaMinutos,
+      this.codEmpleado,
+      this.cargo});
 
   factory DeliveryDriver.fromJson(Map<String, dynamic> json) => DeliveryDriver(
         idEntrega: json["idEntrega"],
@@ -79,7 +89,7 @@ class DeliveryDriver {
         docNum: json["docNum"],
         docNumF: json["docNumF"],
         factura: json["factura"],
-        docDate: DateTime.parse(json["docDate"]),
+        docDate: json["docDate"] != null ? DateTime.parse(json["docDate"]) : null,
         docTime: json["docTime"],
         cardCode: json["cardCode"],
         cardName: json["cardName"],
@@ -105,7 +115,12 @@ class DeliveryDriver {
         direccionEntrega: json["direccionEntrega"],
         obs: json["obs"],
         audUsuario: json["audUsuario"],
+        fechaNota: json["fechaNota"],
+        nombreCompleto: json["nombreCompleto"],
+        diferenciaMinutos: json["diferenciaMinutos"],
         codEmpleado: json["codEmpleado"],
+        cargo: json["cargo"],
+
       );
 
   Map<String, dynamic> toJson() => {
@@ -140,6 +155,10 @@ class DeliveryDriver {
         "direccionEntrega": direccionEntrega,
         "obs": obs,
         "audUsuario": audUsuario,
+        "fechaNota": fechaNota,
+        "nombreCompleto": nombreCompleto,
+        "diferenciaMinutos": diferenciaMinutos,
         "codEmpleado": codEmpleado,
+        "cargo": cargo,
       };
 }

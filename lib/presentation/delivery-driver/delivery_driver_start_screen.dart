@@ -26,10 +26,16 @@ class _DeliveryDriverStartScreenState extends State<DeliveryDriverStartScreen> {
 
   Login? userData;
 
+  // Nuevas variables de estado
+  List<DeliveryDriver> _deliveries = [];
+  bool _deliveriesLoaded = false;
+  bool _hasDeliveries = false;
+
   @override
   void initState() {
     super.initState();
-    _checkDeliveriesStatus();
+    // Cargar las entregas primero, luego verificar el estado
+    _loadDeliveriesForUser().then((_) => _checkDeliveriesStatus());
   }
 
   bool isTokenExpired(String token) {
@@ -43,8 +49,44 @@ class _DeliveryDriverStartScreenState extends State<DeliveryDriverStartScreen> {
     bool deliveriesActive = prefs.getBool('deliveriesActive') ?? false;
     if (deliveriesActive) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const DeliveryDriverScreen()),
+        MaterialPageRoute(
+            builder: (context) => DeliveryDriverScreen(deliveries: _deliveries)),
       );
+    }
+  }
+
+  // Nuevo método para cargar las entregas del usuario
+  Future<void> _loadDeliveriesForUser() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      var userData = await _localStorageService.getUser();
+      if (userData != null) {
+        List<DeliveryDriver> deliveries =
+            await _deliveryDriverService.obtainDelivery(userData.codEmpleado);
+        setState(() {
+          _deliveries = deliveries;
+          _hasDeliveries = deliveries.isNotEmpty;
+          _deliveriesLoaded = true;
+        });
+      } else {
+        setState(() {
+          _hasDeliveries = false;
+          _deliveriesLoaded = true;
+        });
+      }
+    } catch (e) {
+      // Manejar errores si es necesario
+      print('Error al cargar las entregas: $e');
+      setState(() {
+        _hasDeliveries = false;
+        _deliveriesLoaded = true;
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -84,12 +126,7 @@ class _DeliveryDriverStartScreenState extends State<DeliveryDriverStartScreen> {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setBool('deliveriesActive', true);
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const DeliveryDriverScreen()),
-      );
-
-      userData = await _localStorageService.getUser();
-
+      // Registro de inicio de entrega
       DeliveryDriver temp = DeliveryDriver();
 
       debugPrint(currentDateTime);
@@ -101,7 +138,7 @@ class _DeliveryDriverStartScreenState extends State<DeliveryDriverStartScreen> {
       temp.cardCode = " ";
       temp.addressEntregaFac = "";
       temp.addressEntregaMat = "";
-      temp.codEmpleado = userData?.codEmpleado;
+      temp.codEmpleado = userData.codEmpleado;
       temp.valido = 'V';
       temp.db = 'ALL';
       temp.direccionEntrega = address;
@@ -110,9 +147,15 @@ class _DeliveryDriverStartScreenState extends State<DeliveryDriverStartScreen> {
       temp.latitud = position.latitude;
       temp.longitud = position.longitude;
       temp.obs = "Iniciando Entregas";
-      temp.audUsuario = userData?.codUsuario;
+      temp.audUsuario = userData.codUsuario;
 
       await _deliveryDriverService.registerStartDelivery(temp);
+
+      // Navegar a DeliveryDriverScreen pasando las entregas
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+            builder: (context) => DeliveryDriverScreen(deliveries: _deliveries)),
+      );
     } catch (e) {
       print('Error al iniciar las entregas: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -130,24 +173,51 @@ class _DeliveryDriverStartScreenState extends State<DeliveryDriverStartScreen> {
         title: const Text('Iniciar Entregas',
             style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _isLoading ? null : _loadDeliveriesForUser,
+            tooltip: 'Recargar entregas',
+          ),
+        ],
       ),
       body: Center(
-        child: _isLoading
+        child: (_isLoading || !_deliveriesLoaded)
             ? const CircularProgressIndicator()
-            : ElevatedButton(
-                onPressed: _startDeliveries,
-                style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                child: const Text(
-                  'Iniciar Entregas',
-                  style: TextStyle(fontSize: 18),
-                ),
-              ),
+            : (_hasDeliveries
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _startDeliveries,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 40, vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: const Text(
+                          'Iniciar Entregas',
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Tienes entregas pendientes, se recomienda iniciarlas.',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  )
+                : const Text(
+                    'No tiene entregas asignadas o pendientes',
+                    style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  )),
       ),
     );
   }

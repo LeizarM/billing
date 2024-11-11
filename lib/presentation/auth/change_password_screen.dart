@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../application/auth/auth_service.dart';
+import 'package:billing/presentation/dashboard/dashboard_screen.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   final bool isForced;
@@ -33,7 +34,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Contraseña cambiada con éxito')),
         );
-        Navigator.of(context).pushReplacementNamed('/dashboard');
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => const DashboardScreen(initialIndex: 0),
+            ),
+          );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error al cambiar la contraseña: $e')),

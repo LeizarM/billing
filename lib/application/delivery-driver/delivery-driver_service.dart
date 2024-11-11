@@ -1,3 +1,4 @@
+// ignore: file_names
 import 'package:billing/application/auth/local_storage_service.dart';
 import 'package:billing/constants/constants.dart';
 import 'package:billing/domain/delivery-driver/deliverDriver.dart';
@@ -166,4 +167,88 @@ class DeliveryDriverService implements DeliveryDriverRepository {
       throw Exception('Error inesperado: $e');
     }
   }
+
+
+
+  /// Obtiene la lista de choferes
+  @override
+  Future<List<DeliveryDriver>> obtainDriver() async {
+    
+    final token = await _localStorageService.getToken();
+
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/choferes/',
+        data: { },
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          validateStatus: (status) {
+            return status! < 500;
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data as List<dynamic>;
+        _temp = data.map((item) => DeliveryDriver.fromJson(item)).toList();
+        return _temp ?? [];
+      } else {
+        throw Exception(
+            'Server responded with status code: ${response.statusCode}. Message: ${response.data}');
+      }
+    } on DioException catch (e) {
+      debugPrint('DioException: ${e.toString()}');
+      debugPrint('DioException type: ${e.type}');
+      debugPrint('DioException message: ${e.message}');
+      debugPrint('DioException response: ${e.response}');
+      throw Exception('Network error: ${e.message}');
+    } catch (e) {
+      debugPrint('Unexpected error: $e');
+      throw Exception('Unexpected error: $e');
+    }
+  }
+  
+  @override
+  Future<List<DeliveryDriver>> obtainDeliveriesXEmp(int codEmpleado, String fecha) async {
+
+    final token = await _localStorageService.getToken();
+
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/entregas-fecha/',
+        data: {
+          'fechaEntrega': fecha,
+          'codEmpleado': codEmpleado
+        },
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          validateStatus: (status) {
+            return status! < 500;
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data as List<dynamic>;
+        _temp = data.map((item) => DeliveryDriver.fromJson(item)).toList();
+        return _temp ?? [];
+      } else {
+        throw Exception(
+            'Server responded with status code: ${response.statusCode}. Message: ${response.data}');
+      }
+    } on DioException catch (e) {
+      debugPrint('DioException: ${e.toString()}');
+      debugPrint('DioException type: ${e.type}');
+      debugPrint('DioException message: ${e.message}');
+      debugPrint('DioException response: ${e.response}');
+      throw Exception('Network error: ${e.message}');
+    } catch (e) {
+      debugPrint('Unexpected error: $e');
+      throw Exception('Unexpected error: $e');
+    }
+
+
+  }
+
+
 }

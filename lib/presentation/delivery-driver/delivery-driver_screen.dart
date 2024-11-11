@@ -1,3 +1,4 @@
+// delivery-driver_screen.dart
 import 'package:billing/application/auth/local_storage_service.dart';
 import 'package:billing/application/delivery-driver/delivery-driver_service.dart';
 import 'package:billing/application/delivery-driver/location_service.dart';
@@ -44,7 +45,9 @@ List<GroupedDelivery> groupDeliveries(List<DeliveryDriver> deliveries) {
 }
 
 class DeliveryDriverScreen extends StatefulWidget {
-  const DeliveryDriverScreen({super.key});
+  final List<DeliveryDriver> deliveries; // Recibe la lista de entregas
+
+  const DeliveryDriverScreen({super.key, required this.deliveries});
 
   @override
   State<DeliveryDriverScreen> createState() => _DeliveryDriverScreenState();
@@ -89,14 +92,17 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
       userData = await _localStorageService.getUser();
 
       if (userData != null) {
-        List<DeliveryDriver> deliveries =  await _deliveryDriverService.obtainDelivery(userData!.codEmpleado);
+        // Usa la lista de entregas pasada desde DeliveryDriverStartScreen
+        List<DeliveryDriver> deliveries = widget.deliveries;
 
-        if (mounted) {
+        if (deliveries.isNotEmpty) {
           // Usa compute para agrupar las entregas en un isolate separado
           final grouped = await compute(groupDeliveries, deliveries);
           _safeSetState(() {
             _groupedDeliveries = grouped;
           });
+        } else {
+          _groupedDeliveries = [];
         }
       } else {
         logger.w('User data or employee code is null');
