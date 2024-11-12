@@ -30,6 +30,7 @@ class DeliveryDriver {
   String? cochePlaca;
   String? prioridad;
   String? tipo;
+  String? obsF;
   int? fueEntregado;
   String? fechaEntrega;
   num? latitud;
@@ -70,6 +71,7 @@ class DeliveryDriver {
       this.cochePlaca,
       this.prioridad,
       this.tipo,
+      this.obsF,
       this.fueEntregado,
       this.fechaEntrega,
       this.latitud,
@@ -108,6 +110,7 @@ class DeliveryDriver {
         cochePlaca: json["cochePlaca"],
         prioridad: json["prioridad"],
         tipo: json["tipo"],
+        obsF: json["obsF"],
         fueEntregado: json["fueEntregado"],
         fechaEntrega: json["fechaEntrega"],
         latitud: json["latitud"],
@@ -148,6 +151,7 @@ class DeliveryDriver {
         "cochePlaca": cochePlaca,
         "prioridad": prioridad,
         "tipo": tipo,
+        "obsF": obsF,
         "fueEntregado": fueEntregado,
         "fechaEntrega": fechaEntrega,
         "latitud": latitud,

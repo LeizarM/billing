@@ -1,4 +1,7 @@
 // delivery_driver_start_screen.dart
+import 'dart:async';
+import 'dart:io';
+
 import 'package:billing/application/auth/local_storage_service.dart';
 import 'package:billing/application/delivery-driver/delivery-driver_service.dart';
 import 'package:billing/application/delivery-driver/location_service.dart';
@@ -91,65 +94,61 @@ class _DeliveryDriverStartScreenState extends State<DeliveryDriverStartScreen> {
   }
 
   Future<void> _startDeliveries() async {
-    setState(() => _isLoading = true);
+  setState(() => _isLoading = true);
+  try {
+    var userData = await _localStorageService.getUser();
+    if (userData == null) {
+      throw Exception('User data not found');
+    }
+
+    // Solicita permisos de ubicación
+    bool hasPermission =
+        await _locationService.checkAndRequestLocationPermissions(context);
+    if (!hasPermission) {
+      throw Exception('Permisos de ubicación no concedidos');
+    }
+
+    // Obtiene la posición actual
+    var position = await _locationService.getCurrentPosition();
+    if (position == null) {
+      throw Exception('No se pudo obtener la posición.');
+    }
+
+    // Obtiene la dirección a partir de la posición usando Dio
+    String address = await _locationService.getAddressFromLatLng(
+        position.latitude, position.longitude);
+
+    String currentDateTime =
+        DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+
+    // Registro de inicio de entrega
+    DeliveryDriver temp = DeliveryDriver();
+
+    temp.docEntry = -1;
+    temp.docNum = 0;
+    temp.factura = 0;
+    temp.cardName = "Inicio de Entrega";
+    temp.cardCode = " ";
+    temp.addressEntregaFac = "";
+    temp.addressEntregaMat = "";
+    temp.codEmpleado = userData.codEmpleado;
+    temp.valido = 'V';
+    temp.db = 'ALL';
+    temp.direccionEntrega = address;
+    temp.fueEntregado = 1;
+    temp.fechaEntrega = currentDateTime;
+    temp.latitud = position.latitude;
+    temp.longitud = position.longitude;
+    temp.obs = "Iniciando Entregas";
+    temp.audUsuario = userData.codUsuario;
+
     try {
-      var userData = await _localStorageService.getUser();
-      if (userData == null) {
-        throw Exception('User data not found');
-      }
-
-      // Solicita permisos de ubicación
-      bool hasPermission =
-          await _locationService.checkAndRequestLocationPermissions(context);
-      if (!hasPermission) {
-        throw Exception('Permisos de ubicación no concedidos');
-      }
-
-      // Obtiene la posición actual
-      var position = await _locationService.getCurrentPosition();
-      if (position == null) {
-        throw Exception('No se pudo obtener la posición.');
-      }
-
-      // Obtiene la dirección a partir de la posición usando Dio
-      String address = await _locationService.getAddressFromLatLng(
-          position.latitude, position.longitude);
-
-      // Imprime los datos en la consola
-      print('Latitude: ${position.latitude}');
-      print('Longitude: ${position.longitude}');
-      print('Address: $address');
-
-      String currentDateTime =
-          DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
-
+      // Intenta registrar el inicio de entrega
+      await _deliveryDriverService.registerStartDelivery(temp);
+      
+      // Solo si el registro fue exitoso, actualiza las preferencias y navega
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setBool('deliveriesActive', true);
-
-      // Registro de inicio de entrega
-      DeliveryDriver temp = DeliveryDriver();
-
-      debugPrint(currentDateTime);
-
-      temp.docEntry = -1;
-      temp.docNum = 0;
-      temp.factura = 0;
-      temp.cardName = "Inicio de Entrega";
-      temp.cardCode = " ";
-      temp.addressEntregaFac = "";
-      temp.addressEntregaMat = "";
-      temp.codEmpleado = userData.codEmpleado;
-      temp.valido = 'V';
-      temp.db = 'ALL';
-      temp.direccionEntrega = address;
-      temp.fueEntregado = 1;
-      temp.fechaEntrega = currentDateTime;
-      temp.latitud = position.latitude;
-      temp.longitud = position.longitude;
-      temp.obs = "Iniciando Entregas";
-      temp.audUsuario = userData.codUsuario;
-
-      await _deliveryDriverService.registerStartDelivery(temp);
 
       // Navegar a DeliveryDriverScreen pasando las entregas
       Navigator.of(context).pushReplacement(
@@ -157,14 +156,39 @@ class _DeliveryDriverStartScreenState extends State<DeliveryDriverStartScreen> {
             builder: (context) => DeliveryDriverScreen(deliveries: _deliveries)),
       );
     } catch (e) {
-      print('Error al iniciar las entregas: $e');
+      // Manejo específico de errores de conexión
+      String errorMessage = 'Error al iniciar las entregas: ';
+      
+      if (e is TimeoutException) {
+        errorMessage += 'Tiempo de espera agotado. Por favor, verifica tu conexión a internet.';
+      } else if (e is SocketException) {
+        errorMessage += 'No hay conexión a internet. Por favor, verifica tu conexión.';
+      } else {
+        errorMessage += 'Error de conexión. Por favor, intenta nuevamente.';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al iniciar las entregas: $e')),
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
       );
-    } finally {
-      setState(() => _isLoading = false);
+      return; // Evita continuar con el flujo
     }
+  } catch (e) {
+    print('Error general: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error: ${e.toString()}'),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  } finally {
+    setState(() => _isLoading = false);
   }
+}
 
   @override
   Widget build(BuildContext context) {

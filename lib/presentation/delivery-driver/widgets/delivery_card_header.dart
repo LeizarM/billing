@@ -115,6 +115,23 @@ class _DeliveryCardHeaderState extends State<DeliveryCardHeader> {
               ),
               const SizedBox(height: 12),
               Text(
+                'Observaciones Nota:',
+                style: TextStyle(
+                  color: Colors.grey[800],
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              SelectableText(
+                widget.delivery.obsF ?? 'Sin observaciones',
+                style: TextStyle(
+                  color: Colors.grey[800],
+                  fontSize: 14,
+                ),
+              ),
+
+              const SizedBox(height: 12),
+              Text(
                 'Total de productos: ${widget.delivery.items.length}',
                 style: TextStyle(
                   color: Colors.grey[700],

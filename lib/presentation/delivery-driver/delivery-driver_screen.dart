@@ -39,6 +39,7 @@ List<GroupedDelivery> groupDeliveries(List<DeliveryDriver> deliveries) {
       items: items,
       db: items.first.db ?? 'DB Desconocida',
       tipo: items.first.tipo ?? 'Tipo Desconocido',
+      obsF: items.first.obsF ?? 'Observación no disponible',
       obs: items.first.obs ?? '',
     );
   }).toList();
@@ -93,7 +94,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
 
       if (userData != null) {
         // Usa la lista de entregas pasada desde DeliveryDriverStartScreen
-        List<DeliveryDriver> deliveries = widget.deliveries;
+        List<DeliveryDriver> deliveries = await _deliveryDriverService.obtainDelivery(userData!.codEmpleado);
 
         if (deliveries.isNotEmpty) {
           // Usa compute para agrupar las entregas en un isolate separado

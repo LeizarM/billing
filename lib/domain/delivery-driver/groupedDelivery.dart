@@ -10,6 +10,7 @@ class GroupedDelivery {
   String db; // Agregamos el campo db
   bool isDelivered;
   String? tipo; // Agregamos el campo tipo
+  String? obsF;
 
   GroupedDelivery({
     required this.docEntry,
@@ -21,6 +22,7 @@ class GroupedDelivery {
     required this.db, // Añadimos db como parámetro requerido
     this.isDelivered = false,
     this.tipo,
+    this.obsF,
   });
 
   int get totalQuantity => items.fold(0, (sum, item) => sum + item.quantity!);

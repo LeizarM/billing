@@ -443,8 +443,12 @@ class DeliveryCard extends StatelessWidget {
                     style: const TextStyle(fontSize: 14),
                   ),
                 ),
+              ],
+            ),
+            Row(
+              children: [
                 if (item.cochePlaca != null && item.cochePlaca!.isNotEmpty) ...[
-                  const SizedBox(width: 8.0),
+                  const SizedBox(height: 8.0),
                   const Icon(Icons.directions_car, color: Colors.blue, size: 16),
                   const SizedBox(width: 4),
                   Text(
@@ -453,27 +457,14 @@ class DeliveryCard extends StatelessWidget {
                   ),
                 ],
               ],
+              
             ),
             const SizedBox(height: 12.0),
             // Observaciones, Diferencia en Minutos y Acción
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Observaciones con Chip Envuelto en Flexible y Tooltip
-                Flexible(
-                  child: Tooltip(
-                    message: 'Observaciones: ${item.obs}',
-                    child: Chip(
-                      label: Text(
-                        'Observaciones: ${item.obs}',
-                        style: const TextStyle(color: Colors.white),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                      backgroundColor: estadoColor,
-                    ),
-                  ),
-                ),
+                
                 // Diferencia en Minutos Resaltada
                 if (item.diferenciaMinutos != null && diferenciaStyle != null) ...[
                   Container(
@@ -512,6 +503,25 @@ class DeliveryCard extends StatelessWidget {
                 ),
               ],
             ),
+            Row(
+              children: [
+                // Observaciones con Chip Envuelto en Flexible y Tooltip
+                Flexible(
+                  child: Tooltip(
+                    message: 'Observaciones: ${item.obs}',
+                    child: Chip(
+                      label: Text(
+                        'Observaciones: ${item.obs}',
+                        style: const TextStyle(color: Colors.white),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      backgroundColor: estadoColor,
+                    ),
+                  ),
+                ),
+              ],
+            )
           ],
         ),
       ));
