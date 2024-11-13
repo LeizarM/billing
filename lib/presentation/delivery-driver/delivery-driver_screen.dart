@@ -8,6 +8,7 @@ import 'package:billing/domain/delivery-driver/groupedDelivery.dart';
 import 'package:billing/presentation/auth/login_screen.dart';
 import 'package:billing/presentation/dashboard/dashboard_screen.dart';
 import 'package:billing/presentation/delivery-driver/utils/dialogs.dart';
+import 'package:billing/presentation/delivery-driver/utils/expiring_shared_preferences.dart';
 import 'package:billing/presentation/delivery-driver/widgets/customLoadingIndicator.dart';
 import 'package:billing/presentation/delivery-driver/widgets/delivery_card.dart';
 import 'package:billing/presentation/delivery-driver/widgets/empty_deliveries_widget.dart';
@@ -17,9 +18,7 @@ import 'package:flutter/foundation.dart'; // Importa compute
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
-
 // Initialize logger
 final logger = Logger();
 
@@ -58,6 +57,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
   final LocalStorageService _localStorageService = LocalStorageService();
   final DeliveryDriverService _deliveryDriverService = DeliveryDriverService();
   final LocationService _locationService = LocationService();
+  final ExpiringSharedPreferences _expiringPrefs = ExpiringSharedPreferences();
   List<GroupedDelivery>? _groupedDeliveries;
   bool _isLoading = true;
   bool _isGettingLocation = false;
@@ -79,7 +79,7 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
       final token = await _localStorageService.getToken();
 
       if (token == null) {
-        _handleExpiredToken();
+        await _handleExpiredToken();
         return;
       }
 
@@ -122,8 +122,9 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
   }
 
   Future<void> _handleExpiredToken() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('deliveriesActive', false);
+    // En lugar de simplemente establecer 'deliveriesActive' en false,
+    // usamos el método de utilidad para removerlo completamente
+    await _expiringPrefs.removeBoolWithExpiry('deliveriesActive');
     if (mounted) {
       logger.i("Redireccionando a Login ....");
       Navigator.of(context).pushAndRemoveUntil(
@@ -299,8 +300,8 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
         String currentDateTime =
             DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('deliveriesActive', false);
+        // En lugar de usar SharedPreferences directamente, usamos la clase de utilidad
+        await _expiringPrefs.setBoolWithExpiry('deliveriesActive', false);
 
         DeliveryDriver temp = DeliveryDriver();
 
