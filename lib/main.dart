@@ -5,6 +5,7 @@ import 'package:billing/presentation/dashboard/dashboard_screen.dart';
 import 'package:billing/presentation/delivery-driver/delivery-driver_screen.dart';
 import 'package:billing/presentation/delivery-driver/delivery_driver_start_screen.dart';
 import 'package:billing/presentation/delivery-driver/delivery_summary.dart';
+import 'package:billing/presentation/driver-car/driver-car_screen.dart';
 import 'package:billing/presentation/item/item_list_screen.dart';
 import 'package:billing/presentation/item_detail_storage/item_detail_storage.dart';
 import 'package:flutter/material.dart';
@@ -55,6 +56,7 @@ class MyApp extends StatelessWidget {
         'tven_ventas/VentasView': (context) => const ItemsScreen(),
         '/delivery-driver': (context) => const DeliveryDriverScreen(deliveries: [],),
         'trch_choferEntrega/Resumen': (context) => const DeliverySummary(),
+        'tpre_Solicitud/Solicitud': (context) => const SolicitudChoferScreen()
       },
     );
   }
