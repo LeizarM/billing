@@ -1,12 +1,15 @@
 import 'package:billing/application/auth/local_storage_service.dart';
 import 'package:billing/application/driver-car/driver-car_service.dart';
 import 'package:billing/domain/auth/login.dart';
+import 'package:billing/domain/driver-car/EstadoChofer.dart';
+import 'package:billing/domain/driver-car/PrestamoChofer.dart';
 import 'package:billing/domain/driver-car/SolicitudChofer.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:syncfusion_flutter_gauges/gauges.dart';
 
 class SolicitudChoferScreen extends StatefulWidget {
-  const SolicitudChoferScreen({Key? key}) : super(key: key);
+  const SolicitudChoferScreen({super.key});
 
   @override
   State<SolicitudChoferScreen> createState() => _SolicitudChoferScreenState();
@@ -15,11 +18,12 @@ class SolicitudChoferScreen extends StatefulWidget {
 class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
   final LocalStorageService _localStorageService = LocalStorageService();
   final DriverCarService _driverCarService = DriverCarService();
-  
+
   Login? userData;
   List<SolicitudChofer> _solicitudes = [];
+  List<EstadoChofer> _estados = [];
   bool _isLoading = true;
-  
+
   @override
   void initState() {
     super.initState();
@@ -29,8 +33,9 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
   Future<void> _initialLoad() async {
     await _getUserData();
     await _loadSolicitudes();
+    await _loadEstados();
   }
-  
+
   Future<void> _getUserData() async {
     userData = await _localStorageService.getUser();
   }
@@ -38,15 +43,23 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
   Future<void> _loadSolicitudes() async {
     try {
       setState(() => _isLoading = true);
-      // Asumiendo que tienes un método en tu servicio para obtener las solicitudes
-      //final solicitudes = await _driverCarService.getSolicitudesChofer();
+      final solicitudes =
+          await _driverCarService.obtainSolicitudes(userData?.codEmpleado ?? 0);
       setState(() {
-        //_solicitudes = solicitudes;
+        _solicitudes = solicitudes;
         _isLoading = false;
       });
     } catch (e) {
       setState(() => _isLoading = false);
       _showErrorSnackBar('Error al cargar las solicitudes: $e');
+    }
+  }
+
+  Future<void> _loadEstados() async {
+    try {
+      _estados = await _driverCarService.lstEstados();
+    } catch (e) {
+      _showErrorSnackBar('Error al cargar los estados: $e');
     }
   }
 
@@ -68,26 +81,13 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
     );
   }
 
-  String _getEstadoText(int estado) {
+  Color _getEstadoColor(String estado) {
     switch (estado) {
-      case 1:
-        return 'Pendiente';
-      case 2:
-        return 'Aprobado';
-      case 3:
-        return 'Rechazado';
-      default:
-        return 'Desconocido';
-    }
-  }
-
-  Color _getEstadoColor(int estado) {
-    switch (estado) {
-      case 1:
+      case 'Pendiente':
         return Colors.orange;
-      case 2:
+      case 'Aprobada':
         return Colors.green;
-      case 3:
+      case 'Rechazada':
         return Colors.red;
       default:
         return Colors.grey;
@@ -107,9 +107,9 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
           ),
         ],
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : _buildBody(),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _buildBody(),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _mostrarFormularioSolicitud(context),
         backgroundColor: Colors.blue,
@@ -138,41 +138,89 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
           return Card(
             elevation: 2,
             margin: const EdgeInsets.symmetric(vertical: 8),
-            child: ListTile(
-              contentPadding: const EdgeInsets.all(16),
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Solicitud #${solicitud.idSolicitud}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+            child: Column(
+              children: [
+                ListTile(
+                  contentPadding: const EdgeInsets.all(16),
+                  title: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Solicitud #${solicitud.idSolicitud}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Chip(
+                        label: Text(
+                          solicitud.estadoCad ?? '',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        backgroundColor:
+                            _getEstadoColor(solicitud.estadoCad ?? ''),
+                      ),
+                    ],
                   ),
-                  Chip(
-                    label: Text(
-                      _getEstadoText(solicitud.estado ?? 1),
-                      style: const TextStyle(color: Colors.white),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 8),
+                      Text(
+                        'Fecha: ${solicitud.fechaSolicitudCad != null ? DateFormat('dd/MM/yyyy HH:mm').format(DateTime.tryParse(solicitud.fechaSolicitudCad!) ?? DateTime.now()) : 'No disponible'}',
+                      ),
+                      const SizedBox(height: 4),
+                      Text('Motivo: ${solicitud.motivo}'),
+                      const SizedBox(height: 4),
+                      Text('Cargo: ${solicitud.cargo}'),
+                    ],
+                  ),
+                ),
+                if (solicitud.estadoCad == 'Aprobada')
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.assignment_turned_in,
+                            color: Colors.white),
+                        label: const Text(
+                          'Completar Información',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: () =>
+                            _mostrarFormularioPrestamo(context, solicitud),
+                      ),
                     ),
-                    backgroundColor: _getEstadoColor(solicitud.estado ?? 1),
                   ),
-                ],
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
-                  Text(
-                    'Fecha: ${DateFormat('dd/MM/yyyy').format(solicitud.fechaSolicitud ?? DateTime.now())}',
-                  ),
-                  const SizedBox(height: 4),
-                  Text('Motivo: ${solicitud.motivo}'),
-                  const SizedBox(height: 4),
-                  Text('Cargo: ${solicitud.cargo}'),
-                ],
-              ),
+              ],
             ),
           );
         },
       ),
+    );
+  }
+
+  Future<void> _mostrarFormularioPrestamo(
+      BuildContext context, SolicitudChofer solicitud) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return _PrestamoFormDialog(
+          solicitud: solicitud,
+          userData: userData,
+          estados: _estados, // Pasar la lista de estados
+          onSuccess: () async {
+            Navigator.pop(context);
+            _showSuccessSnackBar('Préstamo registrado con éxito');
+            await _loadSolicitudes();
+          },
+          onError: (String message) {
+            _showErrorSnackBar(message);
+          },
+        );
+      },
     );
   }
 
@@ -215,7 +263,6 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      // Fecha Solicitud como label
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -264,7 +311,6 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      // Cargo como label
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -307,30 +353,24 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
                           onPressed: () async {
                             if (_formKey.currentState!.validate()) {
                               try {
-                                // Crear objeto SolicitudChofer
-                                SolicitudChofer nuevaSolicitud = SolicitudChofer(
-                          
+                                SolicitudChofer nuevaSolicitud =
+                                    SolicitudChofer(
                                   motivo: _motivoController.text,
                                   codEmpSoli: userData?.codEmpleado ?? 0,
                                   cargo: userData?.cargo,
                                   estado: _estado,
-                                  audUsuario: userData?.codUsuario?? 0,
+                                  audUsuario: userData?.codUsuario ?? 0,
                                 );
 
-                                // Guardar la solicitud
-                                await _driverCarService.registerSolicitudChofer(nuevaSolicitud);
-                                
-                                // Cerrar el diálogo
+                                await _driverCarService
+                                    .registerSolicitudChofer(nuevaSolicitud);
                                 Navigator.pop(context);
-                                
-                                // Mostrar mensaje de éxito
-                                _showSuccessSnackBar('Solicitud creada con éxito');
-                                
-                                // Recargar la lista de solicitudes
+                                _showSuccessSnackBar(
+                                    'Solicitud creada con éxito');
                                 await _loadSolicitudes();
-                                
                               } catch (e) {
-                                _showErrorSnackBar('Error al crear la solicitud: $e');
+                                _showErrorSnackBar(
+                                    'Error al crear la solicitud: $e');
                               }
                             }
                           },
@@ -348,6 +388,353 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _PrestamoFormDialog extends StatefulWidget {
+  final SolicitudChofer solicitud;
+  final Login? userData;
+  final VoidCallback onSuccess;
+  final Function(String) onError;
+  final List<EstadoChofer> estados; // Agregar este campo
+
+  const _PrestamoFormDialog({
+    required this.solicitud,
+    required this.userData,
+    required this.onSuccess,
+    required this.onError,
+    required this.estados, // Agregar este parámetro
+  });
+
+  @override
+  _PrestamoFormDialogState createState() => _PrestamoFormDialogState();
+}
+
+class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _driverCarService = DriverCarService();
+  final _kmEntregaController = TextEditingController();
+  final _nivelCombustibleController = TextEditingController(text: '0');
+  final _estadoLateralController = TextEditingController();
+  final _estadoInteriorController = TextEditingController();
+  final _estadoDelanteraController = TextEditingController();
+  final _estadoTraseraController = TextEditingController();
+  final _estadoCapoteController = TextEditingController();
+  double _nivelCombustible = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      insetPadding: const EdgeInsets.all(16),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 500),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Estado del Vehículo - Entrega',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ID Solicitud
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'ID Solicitud',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: const BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Colors.grey,
+                              width: 1.0,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          widget.solicitud.idSolicitud?.toString() ??
+                              'No disponible',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Kilometraje
+                  TextFormField(
+                    controller: _kmEntregaController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Kilometraje',
+                      border: OutlineInputBorder(),
+                      suffixText: 'km',
+                    ),
+                    validator: (value) =>
+                        value?.isEmpty ?? true ? 'Campo requerido' : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Nivel de Combustible con Gauge
+                  Container(
+                    height: 250,
+                    child: SfRadialGauge(
+                      enableLoadingAnimation: true,
+                      axes: <RadialAxis>[
+                        RadialAxis(
+                          minimum: 0,
+                          maximum: 100,
+                          ranges: <GaugeRange>[
+                            GaugeRange(
+                                startValue: 0, endValue: 33, color: Colors.red),
+                            GaugeRange(
+                                startValue: 33,
+                                endValue: 66,
+                                color: Colors.orange),
+                            GaugeRange(
+                                startValue: 66,
+                                endValue: 100,
+                                color: Colors.green),
+                          ],
+                          pointers: <GaugePointer>[
+                            MarkerPointer(
+                              value: _nivelCombustible,
+                              enableDragging: true,
+                              onValueChanged: (double value) {
+                                setState(() {
+                                  _nivelCombustible = value;
+                                  _nivelCombustibleController.text =
+                                      value.toStringAsFixed(0);
+                                });
+                              },
+                              onValueChangeEnd: (double value) {
+                                setState(() {
+                                  _nivelCombustible = value;
+                                  _nivelCombustibleController.text =
+                                      value.toStringAsFixed(0);
+                                });
+                              },
+                              markerHeight: 20,
+                              markerWidth: 20,
+                              markerType: MarkerType.triangle,
+                              color: Colors.blue,
+                            ),
+                            NeedlePointer(
+                              value: _nivelCombustible,
+                              enableAnimation: true,
+                              needleColor: Colors.blue,
+                            ),
+                          ],
+                          annotations: <GaugeAnnotation>[
+                            GaugeAnnotation(
+                              widget: Text(
+                                '${_nivelCombustible.toStringAsFixed(0)}%',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              angle: 90,
+                              positionFactor: 0.5,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Estados del vehículo
+                  const Text(
+                    'Estado de la Carrocería',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  DropdownButtonFormField<int>(
+                    decoration: const InputDecoration(
+                      labelText: 'Estado Lateral',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: widget.estados.map((EstadoChofer estado) {
+                      return DropdownMenuItem<int>(
+                        value: estado.idEst,
+                        child: Text(estado.estado ?? ''),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _estadoLateralController.text = value.toString();
+                      });
+                    },
+                    validator: (value) =>
+                        value == null ? 'Seleccione un estado' : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  DropdownButtonFormField<int>(
+                    decoration: const InputDecoration(
+                      labelText: 'Estado Interior',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: widget.estados.map((EstadoChofer estado) {
+                      return DropdownMenuItem<int>(
+                        value: estado.idEst,
+                        child: Text(estado.estado ?? ''),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _estadoInteriorController.text = value.toString();
+                      });
+                    },
+                    validator: (value) =>
+                        value == null ? 'Seleccione un estado' : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  DropdownButtonFormField<int>(
+                    decoration: const InputDecoration(
+                      labelText: 'Estado Delantera',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: widget.estados.map((EstadoChofer estado) {
+                      return DropdownMenuItem<int>(
+                        value: estado.idEst,
+                        child: Text(estado.estado ?? ''),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _estadoDelanteraController.text = value.toString();
+                      });
+                    },
+                    validator: (value) =>
+                        value == null ? 'Seleccione un estado' : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  DropdownButtonFormField<int>(
+                    decoration: const InputDecoration(
+                      labelText: 'Estado Trasera',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: widget.estados.map((EstadoChofer estado) {
+                      return DropdownMenuItem<int>(
+                        value: estado.idEst,
+                        child: Text(estado.estado ?? ''),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _estadoTraseraController.text = value.toString();
+                      });
+                    },
+                    validator: (value) =>
+                        value == null ? 'Seleccione un estado' : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  DropdownButtonFormField<int>(
+                    decoration: const InputDecoration(
+                      labelText: 'Estado Capote',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: widget.estados.map((EstadoChofer estado) {
+                      return DropdownMenuItem<int>(
+                        value: estado.idEst,
+                        child: Text(estado.estado ?? ''),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _estadoCapoteController.text = value.toString();
+                      });
+                    },
+                    validator: (value) =>
+                        value == null ? 'Seleccione un estado' : null,
+                  ),
+                  const SizedBox(height: 24),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: Colors.blue,
+                      ),
+                      onPressed: () async {
+                        if (_formKey.currentState!.validate()) {
+                          try {
+
+                            PrestamoChofer prestamoData = PrestamoChofer(
+                              idSolicitud: widget.solicitud.idSolicitud,
+                              kilometrajeEntrega: double.parse(_kmEntregaController.text),
+                              nivelCombustibleEntrega: _nivelCombustible.round(),
+                              estadoLateralesEntrega: int.parse(_estadoLateralController.text),
+                              estadoInteriorEntrega: int.parse(_estadoInteriorController.text),
+                              estadoDelanteraEntrega: int.parse(_estadoDelanteraController.text),
+                              estadoTraseraEntrega: int.parse(_estadoTraseraController.text),
+                              estadoCapoteEntrega: int.parse(_estadoCapoteController.text),
+                              audUsuario: widget.userData?.codUsuario ?? 0
+                            );
+
+                            
+                            
+                            await _driverCarService.registerPrestamo( prestamoData );
+
+                            widget.onSuccess();
+                          } catch (e) {
+                            widget
+                                .onError('Error al registrar el préstamo: $e');
+                          }
+                        }
+                      },
+                      child: const Text(
+                        'Registrar Préstamo',
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

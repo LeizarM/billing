@@ -10,6 +10,7 @@ class Login {
   final int codCiudad;
   final String login;
   final String versionApp;
+  final int codSucursal;
   final List<Authority> authorities;
 
   Login({
@@ -24,6 +25,7 @@ class Login {
     required this.codCiudad,
     required this.login,
     required this.versionApp,
+    required this.codSucursal,
     required this.authorities,
   });
 
@@ -40,6 +42,7 @@ class Login {
       codCiudad: json['codCiudad'],
       login: json['login'],
       versionApp: json['versionApp'],
+      codSucursal: json['codSucursal'],
       authorities: (json['authorities'] as List)
           .map((a) => Authority.fromJson(a))
           .toList(),
@@ -59,6 +62,7 @@ class Login {
       'codCiudad': codCiudad,
       'login': login,
       'versionApp': versionApp,
+      'codSucursal': codSucursal,
       'authorities': authorities.map((a) => a.toJson()).toList(),
     };
   }

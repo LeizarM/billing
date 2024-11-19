@@ -15,8 +15,8 @@ class PrestamoChofer {
     int? codSucursal;
     DateTime? fechaEntrega;
     int? codEmpEntregadoPor;
-    int? kilometrajeEntrega;
-    int? kilometrajeRecepcion;
+    double? kilometrajeEntrega;
+    double? kilometrajeRecepcion;
     int? nivelCombustibleEntrega;
     int? nivelCombustibleRecepcion;
     int? estadoLateralesEntrega;
