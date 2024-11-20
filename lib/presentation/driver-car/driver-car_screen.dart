@@ -22,6 +22,7 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
   Login? userData;
   List<SolicitudChofer> _solicitudes = [];
   List<EstadoChofer> _estados = [];
+  List<SolicitudChofer> _coches = [];
   bool _isLoading = true;
 
   @override
@@ -34,6 +35,7 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
     await _getUserData();
     await _loadSolicitudes();
     await _loadEstados();
+    await _loadCoches();
   }
 
   Future<void> _getUserData() async {
@@ -60,6 +62,14 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
       _estados = await _driverCarService.lstEstados();
     } catch (e) {
       _showErrorSnackBar('Error al cargar los estados: $e');
+    }
+  }
+
+  Future<void> _loadCoches() async {
+    try {
+      _coches = await _driverCarService.obtainCoches();
+    } catch (e) {
+      _showErrorSnackBar('Error al cargar los coches: $e');
     }
   }
 
@@ -227,6 +237,7 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
   Future<void> _mostrarFormularioSolicitud(BuildContext context) async {
     final _formKey = GlobalKey<FormState>();
     final _motivoController = TextEditingController();
+    int? _selectedCoche;
     final DateTime _fechaSolicitud = DateTime.now();
     int? _estado = 1;
 
@@ -311,6 +322,39 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
+                      SizedBox(
+                        width: double
+                            .infinity, // Asegura que tome el ancho disponible
+                        child: DropdownButtonFormField<int>(
+                          isExpanded:
+                              true, // Importante: permite que el dropdown se expanda correctamente
+                          decoration: const InputDecoration(
+                            labelText: 'Coche para solicitar',
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8), // Ajusta el padding
+                          ),
+                          items: _coches.map((SolicitudChofer coche) {
+                            return DropdownMenuItem<int>(
+                              value: coche.idCocheSol,
+                              child: Text(
+                                coche.coche ?? '',
+                                overflow: TextOverflow
+                                    .ellipsis, // Maneja textos largos
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedCoche = value;
+                            });
+                          },
+                          validator: (value) =>
+                              value == null ? 'Seleccione un coche' : null,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -359,6 +403,8 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
                                   codEmpSoli: userData?.codEmpleado ?? 0,
                                   cargo: userData?.cargo,
                                   estado: _estado,
+                                  idCocheSol:
+                                      _selectedCoche, // Usar la variable directamente // Agregar este campo
                                   audUsuario: userData?.codUsuario ?? 0,
                                 );
 
@@ -699,9 +745,9 @@ class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
                       onPressed: () async {
                         if (_formKey.currentState!.validate()) {
                           try {
-
                             PrestamoChofer prestamoData = PrestamoChofer(
                               idSolicitud: widget.solicitud.idSolicitud,
+                              idCoche: widget.solicitud.idCocheSol, // Agregar esta línea
                               kilometrajeEntrega: double.parse(_kmEntregaController.text),
                               nivelCombustibleEntrega: _nivelCombustible.round(),
                               estadoLateralesEntrega: int.parse(_estadoLateralController.text),
@@ -710,11 +756,11 @@ class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
                               estadoTraseraEntrega: int.parse(_estadoTraseraController.text),
                               estadoCapoteEntrega: int.parse(_estadoCapoteController.text),
                               audUsuario: widget.userData?.codUsuario ?? 0
-                            );
+                          );
 
+                            debugPrint('Prestamo: ${prestamoData.toJson()}');
                             
-                            
-                            await _driverCarService.registerPrestamo( prestamoData );
+                            await _driverCarService.registerPrestamo(prestamoData);
 
                             widget.onSuccess();
                           } catch (e) {

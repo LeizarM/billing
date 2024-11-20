@@ -14,7 +14,10 @@ class SolicitudChofer {
     int? audUsuario;
     String? fechaSolicitudCad;
     String? estadoCad;
-
+    int? idCocheSol;
+    int? codSucursal;
+    String? coche;
+   
     SolicitudChofer({
         this.idSolicitud,
         this.fechaSolicitud,
@@ -25,6 +28,9 @@ class SolicitudChofer {
         this.audUsuario,
         this.fechaSolicitudCad,
         this.estadoCad,
+        this.idCocheSol,
+        this.codSucursal,
+        this.coche,
     });
 
     factory SolicitudChofer.fromJson(Map<String, dynamic> json) => SolicitudChofer(
@@ -37,6 +43,9 @@ class SolicitudChofer {
         audUsuario: json["audUsuario"],
         fechaSolicitudCad: json["fechaSolicitudCad"],
         estadoCad: json["estadoCad"],
+        idCocheSol: json["idCocheSol"],
+        codSucursal: json["codSucursal"],
+        coche: json["coche"],
     );
 
     Map<String, dynamic> toJson() => {
@@ -49,5 +58,8 @@ class SolicitudChofer {
         "audUsuario": audUsuario,
         "fechaSolicitudCad": fechaSolicitudCad,
         "estadoCad": estadoCad,
+        "idCocheSol": idCocheSol,
+        "codSucursal": codSucursal,
+        "coche": coche,
     };
 }

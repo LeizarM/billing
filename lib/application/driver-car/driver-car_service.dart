@@ -99,7 +99,7 @@ class DriverCarService implements SolicitudChoferRepository {
   @override
   Future<List<EstadoChofer>> lstEstados() async {
     
-      String? token = await _localStorageService.getToken();
+    String? token = await _localStorageService.getToken();
 
     try {
       final response = await _dio.post(
@@ -174,6 +174,47 @@ class DriverCarService implements SolicitudChoferRepository {
     } catch (e) {
       debugPrint('Error inesperado: $e');
       throw Exception('Error inesperado: $e');
+    }
+
+  }
+  
+  @override
+  Future<List<SolicitudChofer>> obtainCoches() async {
+   
+    String? token = await _localStorageService.getToken();
+
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/coches/',
+        data: {
+        },
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          validateStatus: (status) {
+            return status! < 500;
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        
+        final data = response.data as List<dynamic>;
+        _temp = data.map((item) => SolicitudChofer.fromJson(item)).toList();
+        return _temp ?? [];
+      
+      } else {
+        throw Exception(
+            'Server responded with status code: ${response.statusCode}. Message: ${response.data}');
+      }
+    } on DioException catch (e) {
+      debugPrint('DioException: ${e.toString()}');
+      debugPrint('DioException type: ${e.type}');
+      debugPrint('DioException message: ${e.message}');
+      debugPrint('DioException response: ${e.response}');
+      throw Exception('Network error: ${e.message}');
+    } catch (e) {
+      debugPrint('Unexpected error: $e');
+      throw Exception('Unexpected error: $e');
     }
 
   }

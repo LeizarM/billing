@@ -18,4 +18,6 @@ abstract class SolicitudChoferRepository {
   Future<void> registerPrestamo(PrestamoChofer mb);
 
 
+  Future<void> obtainCoches();
+
 }
