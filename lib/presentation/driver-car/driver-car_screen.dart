@@ -748,6 +748,7 @@ class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
                             PrestamoChofer prestamoData = PrestamoChofer(
                               idSolicitud: widget.solicitud.idSolicitud,
                               idCoche: widget.solicitud.idCocheSol, // Agregar esta línea
+                              codEmpEntregadoPor: widget.userData?.codEmpleado ?? 0,
                               kilometrajeEntrega: double.parse(_kmEntregaController.text),
                               nivelCombustibleEntrega: _nivelCombustible.round(),
                               estadoLateralesEntrega: int.parse(_estadoLateralController.text),
@@ -758,7 +759,7 @@ class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
                               audUsuario: widget.userData?.codUsuario ?? 0
                           );
 
-                            debugPrint('Prestamo: ${prestamoData.toJson()}');
+                           
                             
                             await _driverCarService.registerPrestamo(prestamoData);
 

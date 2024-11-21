@@ -16,6 +16,9 @@ class DriverCarService implements SolicitudChoferRepository {
 
   List<SolicitudChofer>? _temp;
   List<EstadoChofer>? _tempEst ;
+  List<PrestamoChofer>? _tempPre;
+
+
 
   @override
   Future<void> registerSolicitudChofer(SolicitudChofer solicitud) async {
@@ -215,6 +218,90 @@ class DriverCarService implements SolicitudChoferRepository {
     } catch (e) {
       debugPrint('Unexpected error: $e');
       throw Exception('Unexpected error: $e');
+    }
+
+  }
+  
+  @override
+  Future<List<PrestamoChofer>> lstSolicitudesPretamos( int codSucursal ) async {
+    
+
+    String? token = await _localStorageService.getToken();
+
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/solicitudesPrestamo/',
+        data: {
+          'codSucursal': codSucursal,
+        },
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          validateStatus: (status) {
+            return status! < 500;
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        
+        final data = response.data as List<dynamic>;
+        _tempPre = data.map((item) => PrestamoChofer.fromJson(item)).toList();
+        return _tempPre ?? [];
+      
+      } else {
+        throw Exception(
+            'Server responded with status code: ${response.statusCode}. Message: ${response.data}');
+      }
+    } on DioException catch (e) {
+      debugPrint('DioException: ${e.toString()}');
+      debugPrint('DioException type: ${e.type}');
+      debugPrint('DioException message: ${e.message}');
+      debugPrint('DioException response: ${e.response}');
+      throw Exception('Network error: ${e.message}');
+    } catch (e) {
+      debugPrint('Unexpected error: $e');
+      throw Exception('Unexpected error: $e');
+    }
+
+  }
+
+
+  Future<void> actualizarSolicitud( SolicitudChofer mb ) async {
+
+    String? token = await _localStorageService.getToken();
+
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/actualizarSolicitud',
+        data: mb
+            .toJson(), // Enviar directamente el Map generado por toJson()
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type':
+                'application/json', // Especificar el tipo de contenido
+          },
+          validateStatus: (status) => status! < 500,
+        ),
+      );
+
+      if (response.statusCode == 201) {
+        debugPrint('Solicitud de chofer registrada correctamente.');
+      } else {
+        throw Exception(
+          'El servidor respondió con código de estado: ${response.statusCode}. Mensaje: ${response.data}',
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('DioException: ${e.toString()}');
+      if (e.response != null) {
+        debugPrint('Response data: ${e.response?.data}');
+        debugPrint('Response headers: ${e.response?.headers}');
+      }
+      throw Exception('Error de red: ${e.message}');
+    } catch (e) {
+      debugPrint('Error inesperado: $e');
+      throw Exception('Error inesperado: $e');
     }
 
   }

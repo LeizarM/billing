@@ -31,6 +31,14 @@ class PrestamoChofer {
     int? estadoCapoteRecepcion;
     int? audUsuario;
 
+
+    DateTime? fechaSolicitud;
+    String? motivo;
+    String? solicitante;
+    String? cargo;
+    String? coche;
+    String? estadoDisponibilidad;
+
     PrestamoChofer({
         this.idPrestamo,
         this.idCoche,
@@ -53,6 +61,13 @@ class PrestamoChofer {
         this.estadoTraseraRecepcion,
         this.estadoCapoteRecepcion,
         this.audUsuario,
+
+        this.fechaSolicitud,
+        this.motivo,
+        this.solicitante,
+        this.cargo,
+        this.coche,
+        this.estadoDisponibilidad,
     });
 
     factory PrestamoChofer.fromJson(Map<String, dynamic> json) => PrestamoChofer(
@@ -77,6 +92,13 @@ class PrestamoChofer {
         estadoTraseraRecepcion: json["estadoTraseraRecepcion"],
         estadoCapoteRecepcion: json["estadoCapoteRecepcion"],
         audUsuario: json["audUsuario"],
+
+        fechaSolicitud: json["fechaSolicitud"] == null ? null : DateTime.parse(json["fechaSolicitud"]),
+        motivo: json["motivo"],
+        solicitante: json["solicitante"],
+        cargo: json["cargo"],
+        coche: json["coche"],
+        estadoDisponibilidad: json["estadoDisponibilidad"],
     );
 
     Map<String, dynamic> toJson() => {
@@ -101,5 +123,12 @@ class PrestamoChofer {
         "estadoTraseraRecepcion": estadoTraseraRecepcion,
         "estadoCapoteRecepcion": estadoCapoteRecepcion,
         "audUsuario": audUsuario,
+
+        "fechaSolicitud": fechaSolicitud?.toIso8601String(),
+        "motivo": motivo,
+        "solicitante": solicitante,
+        "cargo": cargo,
+        "coche": coche,
+        "estadoDisponibilidad": estadoDisponibilidad,
     };
 }
