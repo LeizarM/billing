@@ -39,13 +39,15 @@ class _DriverViewCarScreenState extends State<DriverViewCarScreen> {
   }
 
   Future<void> _getUserData() async {
+    
     userData = await _localStorageService.getUser();
-    debugPrint('User data: ${userData?.codSucursal}');
+    
   }
 
   Future<void> _getPrestamosSolicitudes() async {
-    prestamosSolicitudes = await _driverCarService
-        .lstSolicitudesPretamos(userData?.codSucursal ?? 0);
+
+    prestamosSolicitudes = await _driverCarService.lstSolicitudesPretamos(userData?.codSucursal ?? 0);
+
   }
 
   Future<void> _loadEstados() async {

@@ -468,6 +468,11 @@ class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
   final _estadoTraseraController = TextEditingController();
   final _estadoCapoteController = TextEditingController();
   double _nivelCombustible = 0;
+  List<int> _selectedLateralEstados = [];
+  List<int> _selectedInteriorEstados = [];
+  List<int> _selectedDelanteraEstados = [];
+  List<int> _selectedTraseraEstados = [];
+  List<int> _selectedCapoteEstados = [];
 
   @override
   Widget build(BuildContext context) {
@@ -630,108 +635,144 @@ class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
                   ),
                   const SizedBox(height: 8),
 
-                  DropdownButtonFormField<int>(
-                    decoration: const InputDecoration(
-                      labelText: 'Estado Lateral',
-                      border: OutlineInputBorder(),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                    items: widget.estados.map((EstadoChofer estado) {
-                      return DropdownMenuItem<int>(
-                        value: estado.idEst,
-                        child: Text(estado.estado ?? ''),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _estadoLateralController.text = value.toString();
-                      });
-                    },
-                    validator: (value) =>
-                        value == null ? 'Seleccione un estado' : null,
+                    child: ExpansionTile(
+                      title: Text('Estado Lateral'),
+                      children: widget.estados.map((EstadoChofer estado) {
+                        return CheckboxListTile(
+                          title: Text(estado.estado ?? ''),
+                          value: _selectedLateralEstados.contains(estado.idEst),
+                          onChanged: (bool? value) {
+                            setState(() {
+                              if (value ?? false) {
+                                _selectedLateralEstados.add(estado.idEst ?? 0);
+                              } else {
+                                _selectedLateralEstados.remove(estado.idEst);
+                              }
+                              _estadoLateralController.text =
+                                  _selectedLateralEstados.join(',');
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
                   ),
                   const SizedBox(height: 16),
 
-                  DropdownButtonFormField<int>(
-                    decoration: const InputDecoration(
-                      labelText: 'Estado Interior',
-                      border: OutlineInputBorder(),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                    items: widget.estados.map((EstadoChofer estado) {
-                      return DropdownMenuItem<int>(
-                        value: estado.idEst,
-                        child: Text(estado.estado ?? ''),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _estadoInteriorController.text = value.toString();
-                      });
-                    },
-                    validator: (value) =>
-                        value == null ? 'Seleccione un estado' : null,
+                    child: ExpansionTile(
+                      title: Text('Estado Interior'),
+                      children: widget.estados.map((EstadoChofer estado) {
+                        return CheckboxListTile(
+                          title: Text(estado.estado ?? ''),
+                          value: _selectedInteriorEstados.contains(estado.idEst),
+                          onChanged: (bool? value) {
+                            setState(() {
+                              if (value ?? false) {
+                                _selectedInteriorEstados.add(estado.idEst ?? 0);
+                              } else {
+                                _selectedInteriorEstados.remove(estado.idEst);
+                              }
+                              _estadoInteriorController.text =
+                                  _selectedInteriorEstados.join(',');
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: ExpansionTile(
+                      title: Text('Estado Delantera'),
+                      children: widget.estados.map((EstadoChofer estado) {
+                        return CheckboxListTile(
+                          title: Text(estado.estado ?? ''),
+                          value: _selectedDelanteraEstados.contains(estado.idEst),
+                          onChanged: (bool? value) {
+                            setState(() {
+                              if (value ?? false) {
+                                _selectedDelanteraEstados.add(estado.idEst ?? 0);
+                              } else {
+                                _selectedDelanteraEstados.remove(estado.idEst);
+                              }
+                              _estadoDelanteraController.text =
+                                  _selectedDelanteraEstados.join(',');
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
                   ),
                   const SizedBox(height: 16),
 
-                  DropdownButtonFormField<int>(
-                    decoration: const InputDecoration(
-                      labelText: 'Estado Delantera',
-                      border: OutlineInputBorder(),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                    items: widget.estados.map((EstadoChofer estado) {
-                      return DropdownMenuItem<int>(
-                        value: estado.idEst,
-                        child: Text(estado.estado ?? ''),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _estadoDelanteraController.text = value.toString();
-                      });
-                    },
-                    validator: (value) =>
-                        value == null ? 'Seleccione un estado' : null,
+                    child: ExpansionTile(
+                      title: Text('Estado Trasera'),
+                      children: widget.estados.map((EstadoChofer estado) {
+                        return CheckboxListTile(
+                          title: Text(estado.estado ?? ''),
+                          value: _selectedTraseraEstados.contains(estado.idEst),
+                          onChanged: (bool? value) {
+                            setState(() {
+                              if (value ?? false) {
+                                _selectedTraseraEstados.add(estado.idEst ?? 0);
+                              } else {
+                                _selectedTraseraEstados.remove(estado.idEst);
+                              }
+                              _estadoTraseraController.text =
+                                  _selectedTraseraEstados.join(',');
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
                   ),
                   const SizedBox(height: 16),
 
-                  DropdownButtonFormField<int>(
-                    decoration: const InputDecoration(
-                      labelText: 'Estado Trasera',
-                      border: OutlineInputBorder(),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                    items: widget.estados.map((EstadoChofer estado) {
-                      return DropdownMenuItem<int>(
-                        value: estado.idEst,
-                        child: Text(estado.estado ?? ''),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _estadoTraseraController.text = value.toString();
-                      });
-                    },
-                    validator: (value) =>
-                        value == null ? 'Seleccione un estado' : null,
-                  ),
-                  const SizedBox(height: 16),
-
-                  DropdownButtonFormField<int>(
-                    decoration: const InputDecoration(
-                      labelText: 'Estado Capote',
-                      border: OutlineInputBorder(),
+                    child: ExpansionTile(
+                      title: Text('Estado Capote'),
+                      children: widget.estados.map((EstadoChofer estado) {
+                        return CheckboxListTile(
+                          title: Text(estado.estado ?? ''),
+                          value: _selectedCapoteEstados.contains(estado.idEst),
+                          onChanged: (bool? value) {
+                            setState(() {
+                              if (value ?? false) {
+                                _selectedCapoteEstados.add(estado.idEst ?? 0);
+                              } else {
+                                _selectedCapoteEstados.remove(estado.idEst);
+                              }
+                              _estadoCapoteController.text =
+                                  _selectedCapoteEstados.join(',');
+                            });
+                          },
+                        );
+                      }).toList(),
                     ),
-                    items: widget.estados.map((EstadoChofer estado) {
-                      return DropdownMenuItem<int>(
-                        value: estado.idEst,
-                        child: Text(estado.estado ?? ''),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _estadoCapoteController.text = value.toString();
-                      });
-                    },
-                    validator: (value) =>
-                        value == null ? 'Seleccione un estado' : null,
                   ),
                   const SizedBox(height: 24),
 
@@ -746,22 +787,29 @@ class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
                         if (_formKey.currentState!.validate()) {
                           try {
                             PrestamoChofer prestamoData = PrestamoChofer(
-                              idSolicitud: widget.solicitud.idSolicitud,
-                              idCoche: widget.solicitud.idCocheSol, // Agregar esta línea
-                              codEmpEntregadoPor: widget.userData?.codEmpleado ?? 0,
-                              kilometrajeEntrega: double.parse(_kmEntregaController.text),
-                              nivelCombustibleEntrega: _nivelCombustible.round(),
-                              estadoLateralesEntrega: int.parse(_estadoLateralController.text),
-                              estadoInteriorEntrega: int.parse(_estadoInteriorController.text),
-                              estadoDelanteraEntrega: int.parse(_estadoDelanteraController.text),
-                              estadoTraseraEntrega: int.parse(_estadoTraseraController.text),
-                              estadoCapoteEntrega: int.parse(_estadoCapoteController.text),
-                              audUsuario: widget.userData?.codUsuario ?? 0
-                          );
+                                idSolicitud: widget.solicitud.idSolicitud,
+                                idCoche: widget
+                                    .solicitud.idCocheSol, // Agregar esta línea
+                                codEmpEntregadoPor:
+                                    widget.userData?.codEmpleado ?? 0,
+                                kilometrajeEntrega:
+                                    double.parse(_kmEntregaController.text),
+                                nivelCombustibleEntrega:
+                                    _nivelCombustible.round(),
+                                estadoLateralesEntrega:
+                                    int.parse(_estadoLateralController.text),
+                                estadoInteriorEntrega:
+                                    int.parse(_estadoInteriorController.text),
+                                estadoDelanteraEntrega:
+                                    int.parse(_estadoDelanteraController.text),
+                                estadoTraseraEntrega:
+                                    int.parse(_estadoTraseraController.text),
+                                estadoCapoteEntrega:
+                                    int.parse(_estadoCapoteController.text),
+                                audUsuario: widget.userData?.codUsuario ?? 0);
 
-                           
-                            
-                            await _driverCarService.registerPrestamo(prestamoData);
+                            await _driverCarService
+                                .registerPrestamo(prestamoData);
 
                             widget.onSuccess();
                           } catch (e) {
