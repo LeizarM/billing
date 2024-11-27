@@ -6,7 +6,6 @@ import 'package:billing/domain/driver-car/SolicitudChofer.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-
 class SolicitudChoferScreen extends StatefulWidget {
   const SolicitudChoferScreen({super.key});
 
@@ -182,7 +181,6 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
                     ],
                   ),
                 ),
-                
               ],
             ),
           );
@@ -305,22 +303,28 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
                         width: double
                             .infinity, // Asegura que tome el ancho disponible
                         child: DropdownButtonFormField<int>(
-                          isExpanded:
-                              true, // Importante: permite que el dropdown se expanda correctamente
+                          isExpanded: true,
                           decoration: const InputDecoration(
                             labelText: 'Coche para solicitar',
                             border: OutlineInputBorder(),
                             contentPadding: EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8), // Ajusta el padding
+                                horizontal: 12, vertical: 8),
                           ),
                           items: _coches.map((SolicitudChofer coche) {
+                            final bool estaEnUso = (coche.coche ?? '').contains('(En Uso)');
                             return DropdownMenuItem<int>(
                               value: coche.idCocheSol,
+                              enabled: !estaEnUso, // Deshabilita si está en uso
                               child: Text(
                                 coche.coche ?? '',
-                                overflow: TextOverflow
-                                    .ellipsis, // Maneja textos largos
+                                overflow: TextOverflow.ellipsis,
+                                style: estaEnUso
+                                    ? const TextStyle(
+                                        color: Colors
+                                            .grey, // Color gris para items deshabilitados
+                                        fontStyle: FontStyle.italic,
+                                      )
+                                    : null,
                               ),
                             );
                           }).toList(),
