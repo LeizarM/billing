@@ -2,11 +2,10 @@ import 'package:billing/application/auth/local_storage_service.dart';
 import 'package:billing/application/driver-car/driver-car_service.dart';
 import 'package:billing/domain/auth/login.dart';
 import 'package:billing/domain/driver-car/EstadoChofer.dart';
-import 'package:billing/domain/driver-car/PrestamoChofer.dart';
 import 'package:billing/domain/driver-car/SolicitudChofer.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:syncfusion_flutter_gauges/gauges.dart';
+
 
 class SolicitudChoferScreen extends StatefulWidget {
   const SolicitudChoferScreen({super.key});
@@ -183,27 +182,7 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
                     ],
                   ),
                 ),
-                if (solicitud.estadoCad == 'Aprobada')
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.assignment_turned_in,
-                            color: Colors.white),
-                        label: const Text(
-                          'Completar Información',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        onPressed: () =>
-                            _mostrarFormularioPrestamo(context, solicitud),
-                      ),
-                    ),
-                  ),
+                
               ],
             ),
           );
@@ -212,7 +191,7 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
     );
   }
 
-  Future<void> _mostrarFormularioPrestamo(
+  /*Future<void> _mostrarFormularioPrestamo(
       BuildContext context, SolicitudChofer solicitud) async {
     return showDialog(
       context: context,
@@ -232,7 +211,7 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
         );
       },
     );
-  }
+  }*/
 
   Future<void> _mostrarFormularioSolicitud(BuildContext context) async {
     final _formKey = GlobalKey<FormState>();
@@ -438,7 +417,7 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
   }
 }
 
-class _PrestamoFormDialog extends StatefulWidget {
+/*class _PrestamoFormDialog extends StatefulWidget {
   final SolicitudChofer solicitud;
   final Login? userData;
   final VoidCallback onSuccess;
@@ -455,9 +434,9 @@ class _PrestamoFormDialog extends StatefulWidget {
 
   @override
   _PrestamoFormDialogState createState() => _PrestamoFormDialogState();
-}
+}*/
 
-class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
+/*class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
   final _formKey = GlobalKey<FormState>();
   final _driverCarService = DriverCarService();
   final _kmEntregaController = TextEditingController();
@@ -832,4 +811,4 @@ class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
       ),
     );
   }
-}
+}*/

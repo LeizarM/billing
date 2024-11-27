@@ -39,6 +39,21 @@ class PrestamoChofer {
     String? coche;
     String? estadoDisponibilidad;
 
+
+
+    String? estadoLateralesEntregaAux;
+    String? estadoInteriorEntregaAux;
+    String? estadoDelanteraEntregaAux;
+    String? estadoTraseraEntregaAux;
+    String? estadoCapoteEntregaAux;
+    String? estadoLateralRecepcionAux;
+    String? estadoInteriorRecepcionAux;
+    String? estadoDelanteraRecepcionAux;
+    String? estadoTraseraRecepcionAux;
+    String? estadoCapoteRecepcionAux;
+
+
+
     PrestamoChofer({
         this.idPrestamo,
         this.idCoche,
@@ -68,6 +83,19 @@ class PrestamoChofer {
         this.cargo,
         this.coche,
         this.estadoDisponibilidad,
+
+        this.estadoLateralesEntregaAux,
+        this.estadoInteriorEntregaAux,
+        this.estadoDelanteraEntregaAux,
+        this.estadoTraseraEntregaAux,
+        this.estadoCapoteEntregaAux,
+        this.estadoLateralRecepcionAux,
+        this.estadoInteriorRecepcionAux,
+        this.estadoDelanteraRecepcionAux,
+        this.estadoTraseraRecepcionAux,
+        this.estadoCapoteRecepcionAux,
+
+
     });
 
     factory PrestamoChofer.fromJson(Map<String, dynamic> json) => PrestamoChofer(
@@ -99,6 +127,17 @@ class PrestamoChofer {
         cargo: json["cargo"],
         coche: json["coche"],
         estadoDisponibilidad: json["estadoDisponibilidad"],
+
+        estadoLateralesEntregaAux: json["estadoLateralesEntregaAux"],
+        estadoInteriorEntregaAux: json["estadoInteriorEntregaAux"],
+        estadoDelanteraEntregaAux: json["estadoDelanteraEntregaAux"],
+        estadoTraseraEntregaAux: json["estadoTraseraEntregaAux"],
+        estadoCapoteEntregaAux: json["estadoCapoteEntregaAux"],
+        estadoLateralRecepcionAux: json["estadoLateralRecepcionAux"],
+        estadoInteriorRecepcionAux: json["estadoInteriorRecepcionAux"],
+        estadoDelanteraRecepcionAux: json["estadoDelanteraRecepcionAux"],
+        estadoTraseraRecepcionAux: json["estadoTraseraRecepcionAux"],
+        estadoCapoteRecepcionAux: json["estadoCapoteRecepcionAux"],
     );
 
     Map<String, dynamic> toJson() => {
@@ -130,5 +169,49 @@ class PrestamoChofer {
         "cargo": cargo,
         "coche": coche,
         "estadoDisponibilidad": estadoDisponibilidad,
+
+        "estadoLateralesEntregaAux": estadoLateralesEntregaAux,
+        "estadoInteriorEntregaAux": estadoInteriorEntregaAux,
+        "estadoDelanteraEntregaAux": estadoDelanteraEntregaAux,
+        "estadoTraseraEntregaAux": estadoTraseraEntregaAux,
+        "estadoCapoteEntregaAux": estadoCapoteEntregaAux,
+        "estadoLateralRecepcionAux": estadoLateralRecepcionAux,
+        "estadoInteriorRecepcionAux": estadoInteriorRecepcionAux,
+        "estadoDelanteraRecepcionAux": estadoDelanteraRecepcionAux,
+        "estadoTraseraRecepcionAux": estadoTraseraRecepcionAux,
+        "estadoCapoteRecepcionAux": estadoCapoteRecepcionAux,
     };
+
+    void setEstadosLateralesEntrega(List<int> estados) {
+        estadoLateralesEntregaAux = estados.join(',');
+    }
+
+    void setEstadosInteriorEntrega(List<int> estados) {
+        estadoInteriorEntregaAux = estados.join(',');
+    }
+    void setEstadosDelanteraEntrega(List<int> estados) {
+        estadoDelanteraEntregaAux = estados.join(',');
+    }
+    void setEstadosTraseraEntrega(List<int> estados) {
+        estadoTraseraEntregaAux = estados.join(',');
+    }
+    void setEstadosCapoteEntrega(List<int> estados) {
+        estadoCapoteEntregaAux = estados.join(',');
+    }
+    void setEstadosLateralesRecepcion(List<int> estados) {
+        estadoLateralRecepcionAux = estados.join(',');
+    }
+    void setEstadosInteriorRecepcion(List<int> estados) {
+        estadoInteriorRecepcionAux = estados.join(',');
+    }
+    void setEstadosDelanteraRecepcion(List<int> estados) {
+        estadoDelanteraRecepcionAux = estados.join(',');
+    }
+    void setEstadosTraseraRecepcion(List<int> estados) {
+        estadoTraseraRecepcionAux = estados.join(',');
+    }
+    void setEstadosCapoteRecepcion(List<int> estados) {
+        estadoCapoteRecepcionAux = estados.join(',');
+    }
+    
 }
