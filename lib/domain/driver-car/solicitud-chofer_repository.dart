@@ -20,7 +20,7 @@ abstract class SolicitudChoferRepository {
 
   Future<void> obtainCoches();
 
-  Future<List<PrestamoChofer>> lstSolicitudesPretamos( int codSucursal );
+  Future<List<PrestamoChofer>> lstSolicitudesPretamos( int codSucursal, int codEmpEntregadoPor );
 
   Future<void> actualizarSolicitud( SolicitudChofer mb );
 

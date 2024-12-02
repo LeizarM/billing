@@ -223,7 +223,7 @@ class DriverCarService implements SolicitudChoferRepository {
   }
   
   @override
-  Future<List<PrestamoChofer>> lstSolicitudesPretamos( int codSucursal ) async {
+  Future<List<PrestamoChofer>> lstSolicitudesPretamos( int codSucursal, int codEmpEntregadoPor ) async {
     
 
     String? token = await _localStorageService.getToken();
@@ -233,6 +233,7 @@ class DriverCarService implements SolicitudChoferRepository {
         '$_baseUrl/solicitudesPrestamo/',
         data: {
           'codSucursal': codSucursal,
+          'codEmpEntregadoPor': codEmpEntregadoPor,
         },
         options: Options(
           headers: {'Authorization': 'Bearer $token'},

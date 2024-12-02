@@ -182,36 +182,5 @@ class PrestamoChofer {
         "estadoCapoteRecepcionAux": estadoCapoteRecepcionAux,
     };
 
-    void setEstadosLateralesEntrega(List<int> estados) {
-        estadoLateralesEntregaAux = estados.join(',');
-    }
-
-    void setEstadosInteriorEntrega(List<int> estados) {
-        estadoInteriorEntregaAux = estados.join(',');
-    }
-    void setEstadosDelanteraEntrega(List<int> estados) {
-        estadoDelanteraEntregaAux = estados.join(',');
-    }
-    void setEstadosTraseraEntrega(List<int> estados) {
-        estadoTraseraEntregaAux = estados.join(',');
-    }
-    void setEstadosCapoteEntrega(List<int> estados) {
-        estadoCapoteEntregaAux = estados.join(',');
-    }
-    void setEstadosLateralesRecepcion(List<int> estados) {
-        estadoLateralRecepcionAux = estados.join(',');
-    }
-    void setEstadosInteriorRecepcion(List<int> estados) {
-        estadoInteriorRecepcionAux = estados.join(',');
-    }
-    void setEstadosDelanteraRecepcion(List<int> estados) {
-        estadoDelanteraRecepcionAux = estados.join(',');
-    }
-    void setEstadosTraseraRecepcion(List<int> estados) {
-        estadoTraseraRecepcionAux = estados.join(',');
-    }
-    void setEstadosCapoteRecepcion(List<int> estados) {
-        estadoCapoteRecepcionAux = estados.join(',');
-    }
-    
+ 
 }
