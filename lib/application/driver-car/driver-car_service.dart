@@ -3,6 +3,7 @@ import 'package:billing/constants/constants.dart';
 import 'package:billing/domain/driver-car/EstadoChofer.dart';
 import 'package:billing/domain/driver-car/PrestamoChofer.dart';
 import 'package:billing/domain/driver-car/SolicitudChofer.dart';
+import 'package:billing/domain/driver-car/TipoSolicitud.dart';
 import 'package:billing/domain/driver-car/solicitud-chofer_repository.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ class DriverCarService implements SolicitudChoferRepository {
   List<SolicitudChofer>? _temp;
   List<EstadoChofer>? _tempEst ;
   List<PrestamoChofer>? _tempPre;
+  List<TipoSolicitud>? _tempTip;
 
 
 
@@ -304,6 +306,49 @@ class DriverCarService implements SolicitudChoferRepository {
       debugPrint('Error inesperado: $e');
       throw Exception('Error inesperado: $e');
     }
+
+  }
+
+  
+  
+  @override
+  Future<List<TipoSolicitud>> lstTipoSolicitudes() async {
+   
+    String? token = await _localStorageService.getToken();
+
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/tipoSolicitudes/',
+        data: {
+          
+        },
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          validateStatus: (status) {
+            return status! < 500;
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data as List<dynamic>;
+        _tempTip = data.map((item) => TipoSolicitud.fromJson(item)).toList();
+        return _tempTip ?? [];
+      } else {
+        throw Exception(
+            'Server responded with status code: ${response.statusCode}. Message: ${response.data}');
+      }
+    } on DioException catch (e) {
+      debugPrint('DioException: ${e.toString()}');
+      debugPrint('DioException type: ${e.type}');
+      debugPrint('DioException message: ${e.message}');
+      debugPrint('DioException response: ${e.response}');
+      throw Exception('Network error: ${e.message}');
+    } catch (e) {
+      debugPrint('Unexpected error: $e');
+      throw Exception('Unexpected error: $e');
+    }
+
 
   }
 

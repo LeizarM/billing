@@ -2,6 +2,7 @@
 
 import 'package:billing/domain/driver-car/PrestamoChofer.dart';
 import 'package:billing/domain/driver-car/SolicitudChofer.dart';
+import 'package:billing/domain/driver-car/TipoSolicitud.dart';
 
 abstract class SolicitudChoferRepository {
 
@@ -23,5 +24,7 @@ abstract class SolicitudChoferRepository {
   Future<List<PrestamoChofer>> lstSolicitudesPretamos( int codSucursal, int codEmpEntregadoPor );
 
   Future<void> actualizarSolicitud( SolicitudChofer mb );
+
+  Future<List<TipoSolicitud>> lstTipoSolicitudes();
 
 }

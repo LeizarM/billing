@@ -2,6 +2,7 @@ import 'package:billing/application/auth/local_storage_service.dart';
 import 'package:billing/application/driver-car/driver-car_service.dart';
 import 'package:billing/domain/auth/login.dart';
 import 'package:billing/domain/driver-car/SolicitudChofer.dart';
+import 'package:billing/domain/driver-car/TipoSolicitud.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -19,6 +20,7 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
   Login? userData;
   List<SolicitudChofer> _solicitudes = [];
   List<SolicitudChofer> _coches = [];
+  List<TipoSolicitud> _tiposSolicitudes = [];
   bool _isLoading = true;
 
   @override
@@ -32,6 +34,7 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
     await _getUserData();
     await _loadSolicitudes();
     await _loadCoches();
+    await _obtenerTipoSolicitudes();
     setState(() => _isLoading = false);
   }
 
@@ -56,6 +59,18 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
       _showErrorSnackBar('Error al cargar los coches: $e');
     }
   }
+
+  Future<void> _obtenerTipoSolicitudes() async {
+
+    try {
+      final tipoSolicitudes = await _driverCarService.lstTipoSolicitudes();
+      setState(() => _tiposSolicitudes = tipoSolicitudes);
+    } catch (e) {
+      _showErrorSnackBar('Error al cargar los tipos de solicitudes: $e');
+    }
+
+  }
+
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -271,6 +286,7 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
     final _formKey = GlobalKey<FormState>();
     final _motivoController = TextEditingController();
     int? _selectedCoche;
+    int? _selectedTipoSolicitud;
     final DateTime _fechaSolicitud = DateTime.now();
     int? _estado = 1;
 
@@ -338,6 +354,30 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 16),
+                    DropdownButtonFormField<int>(
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Tipo de Solicitud',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: _tiposSolicitudes.map((TipoSolicitud tipo) {
+                        return DropdownMenuItem<int>(
+                          value: tipo.idEs,
+                          child: Text(
+                            tipo.descripcion ?? '',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedTipoSolicitud = value;
+                        });
+                      },
+                      validator: (value) => value == null ? 'Seleccione un tipo de solicitud' : null,
+                    ),
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _motivoController,
@@ -436,6 +476,7 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
                                   cargo: userData?.cargo,
                                   estado: _estado,
                                   idCocheSol: _selectedCoche,
+                                  idES: _selectedTipoSolicitud,
                                   audUsuario: userData?.codUsuario ?? 0,
                                 );
 
