@@ -409,8 +409,8 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
   }
 
   Widget _buildFamilyCode() {
-    final familyCode =
-        _items?.firstOrNull?['codigoFamilia']?.toString() ?? 'N/A';
+    final familyCode = _items?.firstOrNull?['codigoFamilia']?.toString() ?? 'N/A';
+    final utm = _items?.firstOrNull?['utm']?.toString()?? 'N/A';
 
     return Card(
       elevation: 4,
@@ -422,6 +422,16 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
           children: [
             const Text('Información Adicional:',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Divider(height: 24),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('UTM:'),
+                Text(utm,
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
             const Divider(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

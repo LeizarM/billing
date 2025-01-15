@@ -202,7 +202,7 @@ class ItemDetailScreen extends StatelessWidget {
               'Información Adicional:',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const Divider(height: 24),
+            
             _buildDetailRow('Código de Familia', '${item['codigoFamilia']}'),
           ],
         ),

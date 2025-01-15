@@ -258,16 +258,23 @@ class _ItemScreenState extends State<ItemsScreen> {
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Text(
-                                              'Código: ${item['codArticulo']}',
-                                              style: TextStyle(
+
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                              Text(
+                                                'Código: ${item['codArticulo']}',
+                                                style: TextStyle(
                                                   color: Colors.grey[600]),
-                                            ),
-                                            Text(
-                                              'Disponible: ${numberFormat.format(item['disponible'])}',
-                                              style: TextStyle(
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'Disponible: ${numberFormat.format(item['disponible'])}',
+                                                style: TextStyle(
                                                   color: accentColor,
                                                   fontWeight: FontWeight.bold),
+                                              ),
+                                              ],
                                             ),
                                           ],
                                         ),
