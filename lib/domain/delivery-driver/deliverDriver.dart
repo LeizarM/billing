@@ -37,6 +37,8 @@ class DeliveryDriver {
   num? longitud;
   String? direccionEntrega;
   String? obs;
+  num? codSucursalChofer;
+  num? codCiudadChofer;
   int? audUsuario;
 
 
@@ -78,6 +80,8 @@ class DeliveryDriver {
       this.longitud,
       this.direccionEntrega,
       this.obs,
+      this.codSucursalChofer,
+      this.codCiudadChofer,
       this.audUsuario,
       this.fechaNota,
       this.nombreCompleto,
@@ -117,6 +121,8 @@ class DeliveryDriver {
         longitud: json["longitud"],
         direccionEntrega: json["direccionEntrega"],
         obs: json["obs"],
+        codSucursalChofer: json["codSucursalChofer"],
+        codCiudadChofer: json["codCiudadChofer"],
         audUsuario: json["audUsuario"],
         fechaNota: json["fechaNota"],
         nombreCompleto: json["nombreCompleto"],
@@ -158,6 +164,8 @@ class DeliveryDriver {
         "longitud": longitud,
         "direccionEntrega": direccionEntrega,
         "obs": obs,
+        "codSucursalChofer": codSucursalChofer,
+        "codCiudadChofer": codCiudadChofer,
         "audUsuario": audUsuario,
         "fechaNota": fechaNota,
         "nombreCompleto": nombreCompleto,

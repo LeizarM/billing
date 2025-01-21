@@ -190,11 +190,13 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
         dateTime: currentDateTime,
         audUsuario: userData!.codUsuario,
         observation: delivery.obs,
+        codSucursalChofer: userData!.codSucursal,
+        codCiudadChofer: userData!.codCiudad,
+
       );
 
       setState(() => delivery.isDelivered = true);
-      await _loadDeliveries();
-      _showSuccessSnackBar('Entrega marcada como completada');
+      await _loadDeliveries(); _showSuccessSnackBar('Entrega marcada como completada');
     } catch (e) {
       logger.e('Error al marcar como entregada: $e');
       _showErrorSnackBar('Error: $e');
@@ -212,6 +214,8 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
     required String dateTime,
     required int audUsuario,
     required String observation,
+    required int codSucursalChofer,
+    required int codCiudadChofer,
   }) async {
     try {
       await _deliveryDriverService.saveDeliveryData(
@@ -223,6 +227,8 @@ class _DeliveryDriverScreenState extends State<DeliveryDriverScreen> {
         dateTime: dateTime,
         audUsuario: audUsuario,
         obs: observation,
+        codSucursalChofer: codSucursalChofer,
+        codCiudadChofer: codCiudadChofer,
       );
       logger.i('Datos de la entrega guardados correctamente.');
     } catch (e) {

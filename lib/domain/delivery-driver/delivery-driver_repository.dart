@@ -13,6 +13,8 @@ abstract class DeliveryDriverRepository {
       required String address,
       required String dateTime,
       required String obs,
+      required int codSucursalChofer,
+      required int codCiudadChofer,
       required int audUsuario});
 
   Future<void> registerStartDelivery(DeliveryDriver mb);

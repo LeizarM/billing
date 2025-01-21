@@ -64,7 +64,11 @@ class DeliveryDriverService implements DeliveryDriverRepository {
       required String address,
       required String dateTime,
       required String obs,
-      required int audUsuario}) async {
+      required int codSucursalChofer,
+      required int codCiudadChofer,
+      required int audUsuario
+
+      }) async {
     final token = await _localStorageService.getToken();
 
     try {
@@ -78,6 +82,8 @@ class DeliveryDriverService implements DeliveryDriverRepository {
           'direccionEntrega': address,
           'fechaEntrega': dateTime,
           'obs': obs,
+          'codSucursalChofer': codSucursalChofer,
+          'codCiudadChofer': codCiudadChofer,
           'audUsuario': audUsuario
         },
         options: Options(
