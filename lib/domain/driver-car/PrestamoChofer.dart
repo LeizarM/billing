@@ -14,6 +14,7 @@ class PrestamoChofer {
     int? idSolicitud;
     int? codSucursal;
     DateTime? fechaEntrega;
+    int? codEmpChoferSolicitado;
     int? codEmpEntregadoPor;
     double? kilometrajeEntrega;
     double? kilometrajeRecepcion;
@@ -52,7 +53,7 @@ class PrestamoChofer {
     String? estadoTraseraRecepcionAux;
     String? estadoCapoteRecepcionAux;
 
-
+     int? requiereChofer;
 
     PrestamoChofer({
         this.idPrestamo,
@@ -60,6 +61,7 @@ class PrestamoChofer {
         this.idSolicitud,
         this.codSucursal,
         this.fechaEntrega,
+        this.codEmpChoferSolicitado,
         this.codEmpEntregadoPor,
         this.kilometrajeEntrega,
         this.kilometrajeRecepcion,
@@ -95,7 +97,7 @@ class PrestamoChofer {
         this.estadoTraseraRecepcionAux,
         this.estadoCapoteRecepcionAux,
 
-
+        this.requiereChofer,
     });
 
     factory PrestamoChofer.fromJson(Map<String, dynamic> json) => PrestamoChofer(
@@ -104,6 +106,7 @@ class PrestamoChofer {
         idSolicitud: json["idSolicitud"],
         codSucursal: json["codSucursal"],
         fechaEntrega: json["fechaEntrega"] == null ? null : DateTime.parse(json["fechaEntrega"]),
+        codEmpChoferSolicitado: json["codEmpChoferSolicitado"],
         codEmpEntregadoPor: json["codEmpEntregadoPor"],
         kilometrajeEntrega: json["kilometrajeEntrega"],
         kilometrajeRecepcion: json["kilometrajeRecepcion"],
@@ -138,6 +141,8 @@ class PrestamoChofer {
         estadoDelanteraRecepcionAux: json["estadoDelanteraRecepcionAux"],
         estadoTraseraRecepcionAux: json["estadoTraseraRecepcionAux"],
         estadoCapoteRecepcionAux: json["estadoCapoteRecepcionAux"],
+
+        requiereChofer: json["requiereChofer"],
     );
 
     Map<String, dynamic> toJson() => {
@@ -146,6 +151,7 @@ class PrestamoChofer {
         "idSolicitud": idSolicitud,
         "codSucursal": codSucursal,
         "fechaEntrega": fechaEntrega?.toIso8601String(),
+        "codEmpChoferSolicitado": codEmpChoferSolicitado,
         "codEmpEntregadoPor": codEmpEntregadoPor,
         "kilometrajeEntrega": kilometrajeEntrega,
         "kilometrajeRecepcion": kilometrajeRecepcion,
@@ -180,6 +186,8 @@ class PrestamoChofer {
         "estadoDelanteraRecepcionAux": estadoDelanteraRecepcionAux,
         "estadoTraseraRecepcionAux": estadoTraseraRecepcionAux,
         "estadoCapoteRecepcionAux": estadoCapoteRecepcionAux,
+
+        "requiereChofer": requiereChofer,
     };
 
  

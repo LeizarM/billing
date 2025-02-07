@@ -16,6 +16,7 @@ class SolicitudChofer {
     String? estadoCad;
     int? idCocheSol;
     int? idES;
+    int? requiereChofer;
     int? codSucursal;
     String? coche;
    
@@ -31,6 +32,7 @@ class SolicitudChofer {
         this.estadoCad,
         this.idCocheSol,
         this.idES,
+        this.requiereChofer,
         this.codSucursal,
         this.coche,
     });
@@ -47,6 +49,7 @@ class SolicitudChofer {
         estadoCad: json["estadoCad"],
         idCocheSol: json["idCocheSol"],
         idES: json["idES"],
+        requiereChofer: json["requiereChofer"],
         codSucursal: json["codSucursal"],
         coche: json["coche"],
     );
@@ -63,6 +66,7 @@ class SolicitudChofer {
         "estadoCad": estadoCad,
         "idCocheSol": idCocheSol,
         "idES": idES,
+        "requiereChofer": requiereChofer,
         "codSucursal": codSucursal,
         "coche": coche,
     };

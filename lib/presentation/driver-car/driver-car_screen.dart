@@ -44,7 +44,8 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
 
   Future<void> _loadSolicitudes() async {
     try {
-      final solicitudes = await _driverCarService.obtainSolicitudes(userData?.codEmpleado ?? 0);
+      final solicitudes =
+          await _driverCarService.obtainSolicitudes(userData?.codEmpleado ?? 0);
       setState(() => _solicitudes = solicitudes);
     } catch (e) {
       _showErrorSnackBar('Error al cargar las solicitudes: $e');
@@ -61,16 +62,13 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
   }
 
   Future<void> _obtenerTipoSolicitudes() async {
-
     try {
       final tipoSolicitudes = await _driverCarService.lstTipoSolicitudes();
       setState(() => _tiposSolicitudes = tipoSolicitudes);
     } catch (e) {
       _showErrorSnackBar('Error al cargar los tipos de solicitudes: $e');
     }
-
   }
-
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -107,9 +105,10 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
           backgroundColor: Colors.blue,
           bottom: const TabBar(
             tabs: [
-              Tab(icon: Icon(Icons.directions_car), text: 'Estado de Vehículos'),
+              Tab(
+                  icon: Icon(Icons.directions_car),
+                  text: 'Estado de Vehículos'),
               Tab(icon: Icon(Icons.assignment), text: 'Mis Solicitudes'),
-              
             ],
           ),
           actions: [
@@ -123,7 +122,6 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
           children: [
             _buildVehiculosTab(),
             _buildSolicitudesTab(),
-           
           ],
         ),
         floatingActionButton: _buildFloatingActionButton(),
@@ -151,7 +149,7 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    
+
     if (_solicitudes.isEmpty) {
       return const Center(
         child: Text(
@@ -244,7 +242,7 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
 
   Widget _buildVehiculoCard(SolicitudChofer coche) {
     final bool estaEnUso = (coche.coche ?? '').contains('(En Uso)');
-    
+
     return Card(
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -270,7 +268,9 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
         trailing: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: estaEnUso ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+            color: estaEnUso
+                ? Colors.red.withOpacity(0.1)
+                : Colors.green.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -283,227 +283,253 @@ class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
   }
 
   Future<void> _mostrarFormularioSolicitud(BuildContext context) async {
-    final _formKey = GlobalKey<FormState>();
-    final _motivoController = TextEditingController();
-    int? _selectedCoche;
-    int? _selectedTipoSolicitud;
-    final DateTime _fechaSolicitud = DateTime.now();
-    int? _estado = 1;
+    final formKey = GlobalKey<FormState>();
+    final motivoController = TextEditingController();
+    int? selectedCoche;
+    int? selectedTipoSolicitud;
+    final DateTime fechaSolicitud = DateTime.now();
+    int? estado = 1;
 
     return showDialog(
       context: context,
       builder: (BuildContext context) {
-        return Dialog(
-          insetPadding: const EdgeInsets.all(16),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 500),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Nueva Solicitud',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Fecha de Solicitud',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: const BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(
-                                  color: Colors.grey,
-                                  width: 1.0,
-                                ),
-                              ),
-                            ),
-                            child: Text(
-                              DateFormat('dd/MM/yyyy').format(_fechaSolicitud),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                    DropdownButtonFormField<int>(
-                      isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Tipo de Solicitud',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      ),
-                      items: _tiposSolicitudes.map((TipoSolicitud tipo) {
-                        return DropdownMenuItem<int>(
-                          value: tipo.idEs,
-                          child: Text(
-                            tipo.descripcion ?? '',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedTipoSolicitud = value;
-                        });
-                      },
-                      validator: (value) => value == null ? 'Seleccione un tipo de solicitud' : null,
-                    ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _motivoController,
-                        maxLength: 500,
-                        maxLines: 3,
-                        decoration: const InputDecoration(
-                          labelText: 'Motivo',
-                          border: OutlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Por favor ingrese el motivo';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<int>(
-                        isExpanded: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Coche para solicitar',
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        ),
-                        items: _coches.map((SolicitudChofer coche) {
-                          final bool estaEnUso = (coche.coche ?? '').contains('(En Uso)');
-                          return DropdownMenuItem<int>(
-                            value: coche.idCocheSol,
-                            enabled: !estaEnUso,
-                            child: Text(
-                              coche.coche ?? '',
-                              overflow: TextOverflow.ellipsis,
-                              style: estaEnUso
-                                  ? const TextStyle(
-                                      color: Colors.grey,
-                                      fontStyle: FontStyle.italic,
-                                    )
-                                  : null,
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedCoche = value;
-                          });
-                        },
-                        validator: (value) =>
-                            value == null ? 'Seleccione un coche' : null,
-                      ),
-                      const SizedBox(height: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Cargo',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: const BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(
-                                  color: Colors.grey,
-                                  width: 1.0,
-                                ),
-                              ),
-                            ),
-                            child: Text(
-                              userData?.cargo ?? '',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Colors.blue,
-                          ),
-                          onPressed: () async {
-                            if (_formKey.currentState!.validate()) {
-                              try {
-                                SolicitudChofer nuevaSolicitud = SolicitudChofer(
-                                  motivo: _motivoController.text,
-                                  codEmpSoli: userData?.codEmpleado ?? 0,
-                                  cargo: userData?.cargo,
-                                  estado: _estado,
-                                  idCocheSol: _selectedCoche,
-                                  idES: _selectedTipoSolicitud,
-                                  audUsuario: userData?.codUsuario ?? 0,
-                                );
+        bool? requiereChofer;
 
-                                await _driverCarService.registerSolicitudChofer(nuevaSolicitud);
-                                Navigator.pop(context);
-                                _showSuccessSnackBar('Solicitud creada con éxito');
-                                await _loadSolicitudes();
-                              } catch (e) {
-                                _showErrorSnackBar('Error al crear la solicitud: $e');
-                              }
-                            }
-                          },
-                          child: const Text(
-                            'Guardar Solicitud',
-                            style: TextStyle(fontSize: 16, color: Colors.white),
+        return StatefulBuilder(builder: (context, setState) {
+          return Dialog(
+            insetPadding: const EdgeInsets.all(16),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Form(
+                  key: formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Nueva Solicitud',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
+                            IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Fecha de Solicitud',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: const BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: Colors.grey,
+                                    width: 1.0,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                DateFormat('dd/MM/yyyy').format(fechaSolicitud),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<int>(
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Tipo de Solicitud',
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                          ),
+                          items: _tiposSolicitudes.map((TipoSolicitud tipo) {
+                            return DropdownMenuItem<int>(
+                              value: tipo.idEs,
+                              child: Text(
+                                tipo.descripcion ?? '',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedTipoSolicitud = value;
+                            });
+                          },
+                          validator: (value) => value == null
+                              ? 'Seleccione un tipo de solicitud'
+                              : null,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: motivoController,
+                          maxLength: 500,
+                          maxLines: 3,
+                          decoration: const InputDecoration(
+                            labelText: 'Motivo',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Por favor ingrese el motivo';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<int>(
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Coche para solicitar',
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                          ),
+                          items: _coches.map((SolicitudChofer coche) {
+                            final bool estaEnUso =
+                                (coche.coche ?? '').contains('(En Uso)');
+                            return DropdownMenuItem<int>(
+                              value: coche.idCocheSol,
+                              enabled: !estaEnUso,
+                              child: Text(
+                                coche.coche ?? '',
+                                overflow: TextOverflow.ellipsis,
+                                style: estaEnUso
+                                    ? const TextStyle(
+                                        color: Colors.grey,
+                                        fontStyle: FontStyle.italic,
+                                      )
+                                    : null,
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedCoche = value;
+                            });
+                          },
+                          validator: (value) =>
+                              value == null ? 'Seleccione un coche' : null,
+                        ),
+                        const SizedBox(height: 16),
+                        SwitchListTile(
+                          title: const Text('¿Requiere chofer?'),
+                          value: requiereChofer ?? false,
+                          onChanged: (bool value) {
+                            setState(() {
+                              requiereChofer = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Cargo',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: const BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: Colors.grey,
+                                    width: 1.0,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                userData?.cargo ?? '',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              backgroundColor: Colors.blue,
+                            ),
+                            onPressed: () async {
+                              if (formKey.currentState!.validate()) {
+                                try {
+                                  SolicitudChofer nuevaSolicitud =
+                                      SolicitudChofer(
+                                    motivo: motivoController.text,
+                                    codEmpSoli: userData?.codEmpleado ?? 0,
+                                    cargo: userData?.cargo,
+                                    estado: estado,
+                                    idCocheSol: selectedCoche,
+                                    idES: selectedTipoSolicitud,
+                                    requiereChofer: (requiereChofer ?? false)
+                                        ? 1
+                                        : 0, // Convertir boolean a int
+                                    audUsuario: userData?.codUsuario ?? 0,
+                                  );
+
+                                  await _driverCarService
+                                      .registerSolicitudChofer(nuevaSolicitud);
+                                  Navigator.pop(context);
+                                  _showSuccessSnackBar(
+                                      'Solicitud creada con éxito');
+                                  await _loadSolicitudes();
+                                } catch (e) {
+                                  _showErrorSnackBar(
+                                      'Error al crear la solicitud: $e');
+                                }
+                              }
+                            },
+                            child: const Text(
+                              'Guardar Solicitud',
+                              style:
+                                  TextStyle(fontSize: 16, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        );
+          );
+        });
       },
     );
   }
 }
-

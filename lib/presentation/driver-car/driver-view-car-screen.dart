@@ -1,6 +1,8 @@
 import 'package:billing/application/auth/local_storage_service.dart';
+import 'package:billing/application/delivery-driver/delivery-driver_service.dart';
 import 'package:billing/application/driver-car/driver-car_service.dart';
 import 'package:billing/domain/auth/login.dart';
+import 'package:billing/domain/delivery-driver/deliverDriver.dart';
 import 'package:billing/domain/driver-car/EstadoChofer.dart';
 import 'package:billing/domain/driver-car/PrestamoChofer.dart';
 import 'package:billing/domain/driver-car/SolicitudChofer.dart';
@@ -43,7 +45,8 @@ class _DriverViewCarScreenState extends State<DriverViewCarScreen> {
   }
 
   Future<void> _getPrestamosSolicitudes() async {
-    prestamosSolicitudes = await _driverCarService.lstSolicitudesPretamos(userData?.codSucursal ?? 0, userData?.codEmpleado ?? 0);
+    prestamosSolicitudes = await _driverCarService.lstSolicitudesPretamos(
+        userData?.codSucursal ?? 0, userData?.codEmpleado ?? 0);
   }
 
   Future<void> _loadEstados() async {
@@ -73,13 +76,13 @@ class _DriverViewCarScreenState extends State<DriverViewCarScreen> {
   }
 
   Future<void> _handleAprobarPrestamo(PrestamoChofer prestamo) async {
-    SolicitudChofer _temp = SolicitudChofer();
-    _temp.idSolicitud = prestamo.idSolicitud;
-    _temp.estado = 2; // Aprobada
-    _temp.audUsuario = userData?.codUsuario ?? 0;
+    SolicitudChofer temp = SolicitudChofer();
+    temp.idSolicitud = prestamo.idSolicitud;
+    temp.estado = 2; // Aprobada
+    temp.audUsuario = userData?.codUsuario ?? 0;
 
     try {
-      await _driverCarService.actualizarSolicitud(_temp);
+      await _driverCarService.actualizarSolicitud(temp);
       _showSuccessSnackBar('Préstamo aprobado con éxito');
       await _initialLoad();
     } catch (e) {
@@ -88,13 +91,13 @@ class _DriverViewCarScreenState extends State<DriverViewCarScreen> {
   }
 
   Future<void> _handleRechazarPrestamo(PrestamoChofer prestamo) async {
-    SolicitudChofer _temp = SolicitudChofer();
-    _temp.idSolicitud = prestamo.idSolicitud;
-    _temp.estado = 3; // Rechazada
-    _temp.audUsuario = userData?.codUsuario ?? 0;
+    SolicitudChofer temp = SolicitudChofer();
+    temp.idSolicitud = prestamo.idSolicitud;
+    temp.estado = 3; // Rechazada
+    temp.audUsuario = userData?.codUsuario ?? 0;
 
     try {
-      await _driverCarService.actualizarSolicitud(_temp);
+      await _driverCarService.actualizarSolicitud(temp);
       _showSuccessSnackBar('Préstamo rechazado');
       await _initialLoad();
     } catch (e) {
@@ -303,7 +306,8 @@ class _DriverViewCarScreenState extends State<DriverViewCarScreen> {
                     ),
                   ),
 
-                if ( prestamo.estadoDisponibilidad =='Aprobado - En Uso - Pendiente Devolución' )
+                if (prestamo.estadoDisponibilidad ==
+                    'Aprobado - En Uso - Pendiente Devolución')
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: SizedBox(
@@ -323,7 +327,8 @@ class _DriverViewCarScreenState extends State<DriverViewCarScreen> {
                       ),
                     ),
                   ),
-                if ( prestamo.estadoDisponibilidad == 'Aprobado - Pendiente Entrega' )
+                if (prestamo.estadoDisponibilidad ==
+                    'Aprobado - Pendiente Entrega')
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: SizedBox(
@@ -484,7 +489,7 @@ class _DevolucionFormDialogState extends State<_DevolucionFormDialog> {
                   const SizedBox(height: 16),
 
                   // Nivel de Combustible con Gauge
-                  Container(
+                  SizedBox(
                     height: 250,
                     child: SfRadialGauge(
                       enableLoadingAnimation: true,
@@ -625,18 +630,23 @@ class _DevolucionFormDialogState extends State<_DevolucionFormDialog> {
                                   double.parse(_kmRecepcionController.text),
                               nivelCombustibleRecepcion:
                                   _nivelCombustible.round(),
-                              estadoLateralRecepcionAux: _estadoLateralValues.join(','),
-                              estadoInteriorRecepcionAux: _estadoInteriorValues.join(','),
-                              estadoDelanteraRecepcionAux: _estadoDelanteraValues.join(','),
-                              estadoTraseraRecepcionAux: _estadoTraseraValues.join(','),
-                              estadoCapoteRecepcionAux: _estadoCapoteValues.join(','),
+                              estadoLateralRecepcionAux:
+                                  _estadoLateralValues.join(','),
+                              estadoInteriorRecepcionAux:
+                                  _estadoInteriorValues.join(','),
+                              estadoDelanteraRecepcionAux:
+                                  _estadoDelanteraValues.join(','),
+                              estadoTraseraRecepcionAux:
+                                  _estadoTraseraValues.join(','),
+                              estadoCapoteRecepcionAux:
+                                  _estadoCapoteValues.join(','),
                               audUsuario: widget.userData?.codUsuario ?? 0,
                             );
 
-                          
                             //TODO: Realizar la llamada al driver car service para registrar la devolución del vehículo
-                            await _driverCarService.registerPrestamo(devolucionData);
-                            
+                            await _driverCarService
+                                .registerPrestamo(devolucionData);
+
                             widget.onSuccess();
                           } catch (e) {
                             widget.onError(
@@ -684,16 +694,38 @@ class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
   final _driverCarService = DriverCarService();
   final _kmEntregaController = TextEditingController();
   final _nivelCombustibleController = TextEditingController(text: '0');
-  
+
   // Listas para almacenar los valores seleccionados
   List<int> _estadoLateralValues = [];
   List<int> _estadoInteriorValues = [];
   List<int> _estadoDelanteraValues = [];
   List<int> _estadoTraseraValues = [];
   List<int> _estadoCapoteValues = [];
-
-
+  List<DeliveryDriver> drivers = [];
+  int? _selectedDriver = 0;
   double _nivelCombustible = 0;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _loadDeliveriesForUser();
+  }
+
+  Future<void> _loadDeliveriesForUser() async {
+    try {
+      final response = await DeliveryDriverService().obtainDriver();
+      setState(() {
+        drivers = response;
+      });
+    } catch (e) {
+      debugPrint('Error loading drivers: $e');
+      // Mostrar SnackBar con error
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error al cargar los conductores.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -751,7 +783,8 @@ class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
                           ),
                         ),
                         child: Text(
-                          widget.prestamo.idSolicitud?.toString() ?? 'No disponible',
+                          widget.prestamo.idSolicitud?.toString() ??
+                              'No disponible',
                           style: const TextStyle(
                             fontSize: 16,
                             color: Colors.black87,
@@ -771,12 +804,13 @@ class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
                       border: OutlineInputBorder(),
                       suffixText: 'km',
                     ),
-                    validator: (value) => value?.isEmpty ?? true ? 'Campo requerido' : null,
+                    validator: (value) =>
+                        value?.isEmpty ?? true ? 'Campo requerido' : null,
                   ),
                   const SizedBox(height: 16),
 
                   // Nivel de Combustible con Gauge
-                  Container(
+                  SizedBox(
                     height: 250,
                     child: SfRadialGauge(
                       enableLoadingAnimation: true,
@@ -785,9 +819,16 @@ class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
                           minimum: 0,
                           maximum: 100,
                           ranges: <GaugeRange>[
-                            GaugeRange(startValue: 0, endValue: 33, color: Colors.red),
-                            GaugeRange(startValue: 33, endValue: 66, color: Colors.orange),
-                            GaugeRange(startValue: 66, endValue: 100, color: Colors.green),
+                            GaugeRange(
+                                startValue: 0, endValue: 33, color: Colors.red),
+                            GaugeRange(
+                                startValue: 33,
+                                endValue: 66,
+                                color: Colors.orange),
+                            GaugeRange(
+                                startValue: 66,
+                                endValue: 100,
+                                color: Colors.green),
                           ],
                           pointers: <GaugePointer>[
                             MarkerPointer(
@@ -796,7 +837,8 @@ class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
                               onValueChanged: (double value) {
                                 setState(() {
                                   _nivelCombustible = value;
-                                  _nivelCombustibleController.text = value.toStringAsFixed(0);
+                                  _nivelCombustibleController.text =
+                                      value.toStringAsFixed(0);
                                 });
                               },
                               markerHeight: 20,
@@ -827,6 +869,31 @@ class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
                       ],
                     ),
                   ),
+
+                  if (widget.prestamo.requiereChofer == 1) ...[
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<int>(
+                      decoration: const InputDecoration(
+                        labelText: 'Seleccionar Chofer',
+                        border: OutlineInputBorder(),
+                      ),
+                      value: _selectedDriver == 0 ? null : _selectedDriver,
+                      items: drivers
+                          .map((driver) => DropdownMenuItem(
+                                value: driver.codEmpleado,
+                                child: Text(driver.nombreCompleto ?? ''),
+                              ))
+                          .toList(),
+                      onChanged: (value) =>
+                          setState(() => _selectedDriver = value),
+                      validator: (value) =>
+                          widget.prestamo.requiereChofer == 1 &&
+                                  (value == null || value == 0)
+                              ? 'Seleccione un chofer'
+                              : null,
+                    ),
+                  ],
+
                   const SizedBox(height: 16),
 
                   // Estados del vehículo
@@ -877,7 +944,7 @@ class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
                       setState(() => _estadoTraseraValues = values);
                     },
                   ),
-                  
+
                   const SizedBox(height: 16),
 
                   MultiSelectDropdown(
@@ -901,27 +968,33 @@ class _PrestamoFormDialogState extends State<_PrestamoFormDialog> {
                         if (_formKey.currentState!.validate()) {
                           try {
                             PrestamoChofer prestamoData = PrestamoChofer(
-                              idSolicitud: widget.prestamo.idSolicitud,
-                              idCoche: widget.prestamo.idCoche,
-                              codEmpEntregadoPor: widget.userData?.codEmpleado ?? 0,
-                              kilometrajeEntrega: double.parse(_kmEntregaController.text),
-                              nivelCombustibleEntrega: _nivelCombustible.round(),
-                              estadoLateralesEntregaAux: _estadoLateralValues.join(','),
-                              estadoInteriorEntregaAux: _estadoInteriorValues.join(','),
-                              estadoDelanteraEntregaAux: _estadoDelanteraValues.join(','),
-                              estadoTraseraEntregaAux: _estadoTraseraValues.join(','),
-                              estadoCapoteEntregaAux: _estadoCapoteValues.join(','),
-                              audUsuario: widget.userData?.codUsuario ?? 0
-                            );
-
-                            
-                            
+                                idSolicitud: widget.prestamo.idSolicitud,
+                                idCoche: widget.prestamo.idCoche,
+                                codEmpEntregadoPor: widget.userData?.codEmpleado ?? 0,
+                                codEmpChoferSolicitado: widget.prestamo.requiereChofer == 1 ? _selectedDriver : 0,
+                                 kilometrajeEntrega:
+                                    double.parse(_kmEntregaController.text),
+                                nivelCombustibleEntrega:
+                                    _nivelCombustible.round(),
+                                estadoLateralesEntregaAux:
+                                    _estadoLateralValues.join(','),
+                                estadoInteriorEntregaAux:
+                                    _estadoInteriorValues.join(','),
+                                estadoDelanteraEntregaAux:
+                                    _estadoDelanteraValues.join(','),
+                                estadoTraseraEntregaAux:
+                                    _estadoTraseraValues.join(','),
+                                estadoCapoteEntregaAux:
+                                    _estadoCapoteValues.join(','),
+                                audUsuario: widget.userData?.codUsuario ?? 0);
 
                             //TODO: Agregar la llamada al service para registrar el préstamo
-                            await _driverCarService.registerPrestamo(prestamoData);
+                            await _driverCarService
+                                .registerPrestamo(prestamoData);
                             widget.onSuccess();
                           } catch (e) {
-                            widget.onError('Error al registrar el préstamo: $e');
+                            widget
+                                .onError('Error al registrar el préstamo: $e');
                           }
                         }
                       },
@@ -949,12 +1022,12 @@ class MultiSelectDropdown extends StatefulWidget {
   final List<int> selectedValues;
 
   const MultiSelectDropdown({
-    Key? key,
+    super.key,
     required this.label,
     required this.items,
     required this.onChanged,
     required this.selectedValues,
-  }) : super(key: key);
+  });
 
   @override
   _MultiSelectDropdownState createState() => _MultiSelectDropdownState();
@@ -965,8 +1038,9 @@ class _MultiSelectDropdownState extends State<MultiSelectDropdown> {
   Widget build(BuildContext context) {
     return FormField<List<int>>(
       initialValue: widget.selectedValues,
-      validator: (value) =>
-          value == null || value.isEmpty ? 'Seleccione al menos un estado' : null,
+      validator: (value) => value == null || value.isEmpty
+          ? 'Seleccione al menos un estado'
+          : null,
       builder: (FormFieldState<List<int>> state) {
         return InputDecorator(
           decoration: InputDecoration(
@@ -1015,10 +1089,10 @@ class MultiSelectDialog extends StatefulWidget {
   final List<int> initialSelectedValues;
 
   const MultiSelectDialog({
-    Key? key,
+    super.key,
     required this.items,
     required this.initialSelectedValues,
-  }) : super(key: key);
+  });
 
   @override
   _MultiSelectDialogState createState() => _MultiSelectDialogState();
