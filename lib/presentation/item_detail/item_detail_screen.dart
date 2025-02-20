@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 class ItemDetailScreen extends StatelessWidget {
   final List<Map<String, dynamic>> items;
 
-  const ItemDetailScreen({super.key, required this.items});
+  const ItemDetailScreen({Key? key, required this.items}) : super(key: key);
 
   String _getCompanyName(String db) {
     switch (db) {
@@ -17,6 +17,21 @@ class ItemDetailScreen extends StatelessWidget {
     }
   }
 
+  Map<String, List<Map<String, dynamic>>> _groupItemsByCompany(
+      List<Map<String, dynamic>> items) {
+    return items.fold<Map<String, List<Map<String, dynamic>>>>(
+      {},
+      (map, item) {
+        final db = item['db'] as String;
+        if (!map.containsKey(db)) {
+          map[db] = [];
+        }
+        map[db]!.add(item);
+        return map;
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final firstItem = items.first;
@@ -25,15 +40,18 @@ class ItemDetailScreen extends StatelessWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
+          // Fondo dinámico con gradiente y efecto parallax
           SliverAppBar(
-            expandedHeight: 200.0,
+            expandedHeight: 220.0,
             floating: false,
             pinned: true,
+            backgroundColor: Colors.deepPurple,
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
                 'Detalles del Item',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
                   shadows: [
                     Shadow(
                       offset: const Offset(1.0, 1.0),
@@ -49,8 +67,8 @@ class ItemDetailScreen extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.secondary,
+                      Colors.deepPurple.shade300,
+                      Colors.deepPurple.shade900,
                     ],
                   ),
                 ),
@@ -82,21 +100,55 @@ class ItemDetailScreen extends StatelessWidget {
 
   Widget _buildItemHeader(Map<String, dynamic> item) {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.orange.shade100, Colors.orange.shade50],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SelectableText(
-              'Código: ${item['codArticulo']}',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            // Encabezado del código con ícono distintivo
+            Row(
+              children: [
+                const Icon(Icons.confirmation_number, color: Colors.deepOrange, size: 28),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SelectableText(
+                    'Código: ${item['codArticulo']}',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.deepOrange,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            SelectableText(
-              item['datoArt'],
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            const SizedBox(height: 12),
+            // Descripción del item con ícono
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.description, color: Colors.blueGrey, size: 24),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SelectableText(
+                    item['datoArt'],
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -104,53 +156,79 @@ class ItemDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCompanyInfo(BuildContext context, String company,
-      List<Map<String, dynamic>> companyItems) {
+  Widget _buildCompanyInfo(BuildContext context, String company, List<Map<String, dynamic>> companyItems) {
     final companyName = _getCompanyName(company);
+    // Ordenar por lista de precios (de mayor a menor)
     companyItems.sort((a, b) => b['listaPrecio'].compareTo(a['listaPrecio']));
     final numberFormat = NumberFormat('#,##0.00');
 
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.lightBlue.shade50, Colors.lightBlue.shade100],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              companyName,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const Divider(height: 24),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Encabezado con ícono de empresa
+            Row(
               children: [
-                Text('Lista de Precios',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                Text('Precio',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Icon(Icons.business, color: Colors.blue.shade700, size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  companyName,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue.shade900,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
+            const Divider(thickness: 1.2, height: 24),
+            // Títulos de columnas con estilo
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Lista de Precios',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'Precio',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Detalle de precios, cada fila con icono pequeña
             ...companyItems.map((item) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Lista ${item['listaPrecio']}:'),
+                      Row(
+                        children: [
+                          Icon(Icons.list_alt, size: 16, color: Colors.grey.shade600),
+                          const SizedBox(width: 4),
+                          Text('Lista ${item['listaPrecio']}:'),
+                        ],
+                      ),
                       Text(
                         '${numberFormat.format(item['precio'])} ${item['moneda']}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.secondary,
+                          color: Colors.deepPurple,
                         ),
                       ),
                     ],
@@ -175,15 +253,18 @@ class ItemDetailScreen extends StatelessWidget {
             },
           );
         },
-        icon: const Icon(Icons.visibility),
+        icon: const Icon(Icons.visibility_outlined),
         label: const Text('Detalle de Disponibilidad'),
         style: ElevatedButton.styleFrom(
-          foregroundColor: Theme.of(context).colorScheme.onSecondary,
-          backgroundColor: Theme.of(context).colorScheme.secondary,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          foregroundColor: Colors.white,
+          backgroundColor: Colors.deepPurple,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),
+          elevation: 6,
+          shadowColor: Colors.deepPurpleAccent,
         ),
       ),
     );
@@ -191,50 +272,51 @@ class ItemDetailScreen extends StatelessWidget {
 
   Widget _buildCommonInfo(Map<String, dynamic> item) {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: Container(
         padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.green.shade50, Colors.green.shade100],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Información Adicional:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            // Título con ícono para la información adicional
+            const Row(
+              children: [
+                Icon(Icons.info_outline, color: Colors.indigo, size: 24),
+                SizedBox(width: 8),
+                Text(
+                  'Información Adicional:',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
-            
-            _buildDetailRow('Código de Familia', '${item['codigoFamilia']}'),
+            const SizedBox(height: 12),
+            _buildDetailRow('Código de Familia', '${item['codigoFamilia']}', Icons.category),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(String label, String value, IconData iconData) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(value),
+          Icon(iconData, size: 18, color: Colors.grey.shade700),
+          const SizedBox(width: 8),
+          Expanded(child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold))),
+          Text(value, style: TextStyle(color: Colors.grey.shade800)),
         ],
       ),
-    );
-  }
-
-  Map<String, List<Map<String, dynamic>>> _groupItemsByCompany(
-      List<Map<String, dynamic>> items) {
-    return items.fold<Map<String, List<Map<String, dynamic>>>>(
-      {},
-      (map, item) {
-        final db = item['db'] as String;
-        if (!map.containsKey(db)) {
-          map[db] = [];
-        }
-        map[db]!.add(item);
-        return map;
-      },
     );
   }
 }
