@@ -129,6 +129,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.1"
+  file_picker:
+    dependency: "direct main"
+    description:
+      name: file_picker
+      sha256: "6f6bfa8797f296965bdc3e1f702574ab49a540c19b9237b401e7c2b25dfe594c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.0.0"
   file_selector_linux:
     dependency: transitive
     description:
@@ -313,7 +321,7 @@ packages:
     source: hosted
     version: "0.13.6"
   http_parser:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: http_parser
       sha256: "178d74305e7866013777bab2c3d8726205dc5a4dd935297175b19a23a2e66571"
@@ -348,10 +356,10 @@ packages:
     dependency: transitive
     description:
       name: image_picker_android
-      sha256: b62d34a506e12bb965e824b6db4fbf709ee4589cf5d3e99b45ab2287b008ee0c
+      sha256: "82652a75e3dd667a91187769a6a2cc81bd8c111bbead698d8e938d2b63e5e89a"
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.12+20"
+    version: "0.8.12+21"
   image_picker_for_web:
     dependency: transitive
     description:
@@ -392,14 +400,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.10.1"
-  image_picker_web:
-    dependency: "direct main"
-    description:
-      name: image_picker_web
-      sha256: b5cf4faf66714f17b3e86b37a39d19743603163a08b968b28cadfc5df1dc2b75
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.0.0"
   image_picker_windows:
     dependency: transitive
     description:
@@ -925,6 +925,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.0"
+  win32:
+    dependency: transitive
+    description:
+      name: win32
+      sha256: daf97c9d80197ed7b619040e86c8ab9a9dad285e7671ee7390f9180cc828a51e
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.10.1"
   xdg_directories:
     dependency: transitive
     description:

@@ -128,12 +128,13 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text('Detalles del Item', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: const Text('Detalles del Item', 
+            style: TextStyle(fontWeight: FontWeight.w600)),
         centerTitle: true,
-        backgroundColor: Colors.teal,
-        elevation: 1,
+        backgroundColor: Colors.teal.shade700,
+        elevation: 0,
       ),
       body: errorMessage != null
           ? _buildErrorWidget()
@@ -148,22 +149,24 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.warning_amber_outlined, size: 64, color: Colors.redAccent),
+            Icon(Icons.warning_amber_rounded, size: 72, color: Colors.redAccent.shade700),
             const SizedBox(height: 16),
             Text(
               errorMessage!,
-              style: const TextStyle(fontSize: 18, color: Colors.redAccent),
+              style: TextStyle(fontSize: 18, color: Colors.redAccent.shade700, fontWeight: FontWeight.w500),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: _loadData,
               icon: const Icon(Icons.refresh),
-              label: const Text('Reintentar', style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text('Reintentar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               style: ElevatedButton.styleFrom(
-                
+                backgroundColor: Colors.teal.shade600,
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 16),
+                elevation: 3,
               ),
             ),
           ],
@@ -178,6 +181,7 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
+      physics: const BouncingScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -190,6 +194,7 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
           _buildPricesSection(),
           const SizedBox(height: 24),
           _buildFamilyCode(),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -209,23 +214,43 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
 
   Widget _buildCityTotalsSection(Map<String, double> cityTotals, double totalGeneral) {
     return Card(
-      elevation: 2,
+      elevation: 3,
+      shadowColor: Colors.teal.withOpacity(0.3),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.white, Colors.teal.shade50],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              children: const [
-                Icon(Icons.location_city, color: Colors.teal, size: 24),
-                SizedBox(width: 8),
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.location_city, color: Colors.teal.shade700, size: 24),
+                ),
+                const SizedBox(width: 12),
                 Text('Detalle por Ciudad',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style: TextStyle(
+                      fontSize: 18, 
+                      fontWeight: FontWeight.bold,
+                      color: Colors.teal.shade800,
+                    )),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             ...cityTotals.entries.map((entry) {
               final String city = entry.key;
               final double total = entry.value;
@@ -234,23 +259,48 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(city, style: const TextStyle(fontSize: 16)),
-                    Text(_formatNumber(total),
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(city, style: TextStyle(fontSize: 16, color: Colors.grey.shade800)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.teal.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(_formatNumber(total),
+                          style: TextStyle(
+                            fontSize: 16, 
+                            fontWeight: FontWeight.bold,
+                            color: Colors.teal.shade700,
+                          )),
+                    ),
                   ],
                 ),
               );
-            }),
-            const Divider(thickness: 1.2, height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Total General:',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Text(_formatNumber(totalGeneral),
-                    style: TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold, color: Colors.teal)),
-              ],
+            }).toList(),
+            Divider(thickness: 1.2, height: 32, color: Colors.teal.shade100),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.teal.shade100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Total General:', 
+                      style: TextStyle(
+                        fontSize: 18, 
+                        fontWeight: FontWeight.bold,
+                        color: Colors.teal.shade800,
+                      )),
+                  Text(_formatNumber(totalGeneral),
+                      style: TextStyle(
+                        fontSize: 20, 
+                        fontWeight: FontWeight.bold, 
+                        color: Colors.teal.shade800,
+                      )),
+                ],
+              ),
             ),
           ],
         ),
@@ -260,13 +310,14 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
 
   Widget _buildItemHeader(Map<String, dynamic> item) {
     return Card(
-      elevation: 3,
+      elevation: 4,
+      shadowColor: Colors.blue.withOpacity(0.4),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       clipBehavior: Clip.antiAlias,
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.lightBlue.shade50, Colors.lightBlue.shade100],
+            colors: [Colors.blue.shade50, Colors.lightBlue.shade100],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -275,26 +326,86 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SelectableText(
-              'Código: ${item['codArticulo']}',
-              style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.indigo),
-            ),
-            const SizedBox(height: 12),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.description, color: Colors.grey, size: 24),
-                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 5,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(Icons.inventory_2_outlined, 
+                    color: Colors.indigo.shade700, 
+                    size: 30
+                  ),
+                ),
+                const SizedBox(width: 15),
                 Expanded(
-                  child: SelectableText(
-                    item['datoArt'],
-                    style: TextStyle(fontSize: 16, color: Colors.grey.shade800),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SelectableText(
+                        'Código: ${item['codArticulo']}',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.indigo.shade700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.indigo.shade50,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Artículo',
+                          style: TextStyle(
+                            color: Colors.indigo.shade700,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 12,
+                          ),
+                        ),
+                      )
+                    ],
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.description, color: Colors.indigo.shade300, size: 24),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: SelectableText(
+                      item['datoArt'],
+                      style: TextStyle(
+                        fontSize: 16, 
+                        color: Colors.grey.shade800,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -306,87 +417,157 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.inventory, color: Colors.deepOrange, size: 24),
-            SizedBox(width: 8),
-            Text('DISPONIBILIDADES',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          ],
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+          decoration: BoxDecoration(
+            color: Colors.deepOrange.shade50,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: Colors.deepOrange.shade100, width: 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.inventory_2, color: Colors.deepOrange.shade700, size: 24),
+              const SizedBox(width: 8),
+              Text('DISPONIBILIDADES',
+                style: TextStyle(
+                  fontSize: 16, 
+                  fontWeight: FontWeight.w800,
+                  color: Colors.deepOrange.shade800,
+                  letterSpacing: 1.0,
+                )),
+            ],
+          ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         ...groupedItemsData.entries.map((entry) {
           final items = entry.value;
           final totalDisponible = items.fold<double>(
               0, (sum, item) => sum + (item.disponible ?? 0));
           return Card(
             elevation: 3,
+            shadowColor: Colors.blue.withOpacity(0.2),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             margin: const EdgeInsets.only(bottom: 20),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ...items.map(_buildStockItem),
-                  const Divider(thickness: 1.2, height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Total Disponible:',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      Text(
-                        _formatNumber(totalDisponible),
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.teal),
-                      ),
-                    ],
+                  Divider(thickness: 1.2, height: 24, color: Colors.grey.shade200),
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Total Disponible:',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.teal.shade800)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.teal.withOpacity(0.1),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            _formatNumber(totalDisponible),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.teal.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
           );
-        }),
+        }).toList(),
       ],
     );
   }
 
   Widget _buildStockItem(dynamic item) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${item.whsName} (${item.whsCode})',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.teal.shade700,
-                      fontSize: 16),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.storage, size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text('Base de Datos: ${item.db}',
-                        style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                  ],
-                ),
-              ],
+    return Card(
+      elevation: 1,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: Colors.grey.shade50,
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.warehouse_outlined, size: 20, color: Colors.blue.shade700),
             ),
-          ),
-          Text(
-            _formatNumber(item.disponible),
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${item.whsName}',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue.shade900,
+                        fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          item.whsCode,
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text('BD: ${item.db}',
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade700, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.teal.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.teal.shade100),
+              ),
+              child: Text(
+                _formatNumber(item.disponible),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.teal.shade700),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -394,30 +575,35 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
   Widget _buildPricesSection() {
     if (_items == null) return const SizedBox.shrink();
     final groupedItems = _groupItemsByCompany(_items!);
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.monetization_on, color: Colors.amber, size: 24),
-                SizedBox(width: 8),
-                Text('PRECIOS Y CONDICIONES',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const SizedBox(height: 16),
-            ...groupedItems.entries.map((entry) =>
-                _buildCompanyPriceInfo(entry.key, entry.value)),
-          ],
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+          decoration: BoxDecoration(
+            color: Colors.amber.shade50,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: Colors.amber.shade200, width: 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.monetization_on, color: Colors.amber.shade800, size: 24),
+              const SizedBox(width: 8),
+              Text('PRECIOS Y CONDICIONES',
+                style: TextStyle(
+                  fontSize: 16, 
+                  fontWeight: FontWeight.w800,
+                  color: Colors.amber.shade800,
+                  letterSpacing: 1.0,
+                )),
+            ],
+          ),
         ),
-      ),
+        const SizedBox(height: 20),
+        ...groupedItems.entries.map((entry) =>
+            _buildCompanyPriceInfo(entry.key, entry.value)),
+      ],
     );
   }
 
@@ -425,42 +611,87 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
     final compName = _getCompanyName(company);
     companyItems.sort((a, b) => b['listaPrecio'].compareTo(a['listaPrecio']));
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 3,
+      shadowColor: Colors.purple.withOpacity(0.2),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: const EdgeInsets.only(bottom: 20),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(compName,
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.teal)),
-            const Divider(thickness: 1.2, height: 24),
-            ...companyItems.map((item) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.list_alt, size: 16, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Text(
-                              'Lista ${item['listaPrecio']} (${item['condicionPrecio']})',
-                              style: const TextStyle(fontSize: 14)),
-                        ],
-                      ),
-                      Text(
-                        '${numberFormat.format(item['precio'])} ${item['moneda']}',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.deepPurple),
-                      ),
-                    ],
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.purple.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.business, size: 20, color: Colors.purple.shade700),
+                ),
+                const SizedBox(width: 12),
+                Text(compName,
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.purple.shade800)),
+              ],
+            ),
+            Divider(thickness: 1.2, height: 24, color: Colors.purple.shade50),
+            ...companyItems.map((item) => Card(
+                  elevation: 0,
+                  color: Colors.grey.shade50,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.list_alt, size: 18, color: Colors.purple.shade300),
+                            const SizedBox(width: 8),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Lista ${item['listaPrecio']}',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.purple.shade800,
+                                  ),
+                                ),
+                                Text(
+                                  '(${item['condicionPrecio']})',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.purple.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.purple.shade100),
+                          ),
+                          child: Text(
+                            '${numberFormat.format(item['precio'])} ${item['moneda']}',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Colors.purple.shade700),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 )),
           ],
@@ -479,10 +710,11 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
 
     return Card(
       elevation: 3,
+      shadowColor: Colors.lime.withOpacity(0.3),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       clipBehavior: Clip.antiAlias,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [Colors.lime.shade50, Colors.lime.shade100],
@@ -494,33 +726,71 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              children: const [
-                Icon(Icons.info_outline, color: Colors.indigo, size: 24),
-                SizedBox(width: 8),
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.info_outline, color: Colors.indigo.shade700, size: 24),
+                ),
+                const SizedBox(width: 12),
                 Text('Información Adicional:',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo.shade800)),
               ],
             ),
-            const Divider(thickness: 1.2, height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('UTM:',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                Text(utm, style: const TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const Divider(thickness: 1.2, height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Código de Familia:',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                Text(familyCode, style: const TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
+            Divider(thickness: 1.2, height: 32, color: Colors.lime.shade200),
+            
+            _buildInfoRow('UTM:', utm),
+            const SizedBox(height: 16),
+            _buildInfoRow('Código de Familia:', familyCode),
           ],
         ),
+      ),
+    );
+  }
+  
+  Widget _buildInfoRow(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.lime.shade200),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label,
+              style: TextStyle(
+                fontSize: 16, 
+                fontWeight: FontWeight.bold,
+                color: Colors.indigo.shade700,
+              )),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 3,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              value, 
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.indigo.shade600,
+              )
+            ),
+          ),
+        ],
       ),
     );
   }

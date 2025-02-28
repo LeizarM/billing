@@ -3,6 +3,7 @@ import 'package:billing/application/driver-car/driver-car_service.dart';
 import 'package:billing/domain/auth/login.dart';
 import 'package:billing/domain/driver-car/SolicitudChofer.dart';
 import 'package:billing/domain/driver-car/TipoSolicitud.dart';
+import 'package:billing/main.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -13,7 +14,7 @@ class SolicitudChoferScreen extends StatefulWidget {
   State<SolicitudChoferScreen> createState() => _SolicitudChoferScreenState();
 }
 
-class _SolicitudChoferScreenState extends State<SolicitudChoferScreen> {
+class _SolicitudChoferScreenState extends TokenAwareState<SolicitudChoferScreen > {// aqui modificaciones para token
   final LocalStorageService _localStorageService = LocalStorageService();
   final DriverCarService _driverCarService = DriverCarService();
 

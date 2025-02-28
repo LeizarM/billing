@@ -1,14 +1,18 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:billing/application/auth/local_storage_service.dart';
 import 'package:billing/application/register-depositos/register-depositvos_service.dart';
 import 'package:billing/domain/register-depositos/ChBanco.dart';
 import 'package:billing/domain/register-depositos/DepositoCheque.dart';
 import 'package:billing/domain/register-depositos/Empresa.dart';
 import 'package:billing/domain/register-depositos/SocioNegocio.dart';
+import 'package:billing/utils/image_picker_helper.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-// Constantes globales para mantener un estilo moderno
+// Estilos globales
 const double kPadding = 16.0;
 const double kFieldSpacing = 16.0;
 const double kBorderRadius = 12.0;
@@ -22,7 +26,6 @@ class RegistrarDepositoPage extends StatefulWidget {
 
 class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final ImagePicker _picker = ImagePicker();
 
   final LocalStorageService _localStorageService = LocalStorageService();
   final DepositoRepositoryImpl depositoRepository = DepositoRepositoryImpl();
@@ -31,7 +34,10 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
   final TextEditingController _importeController = TextEditingController();
   final TextEditingController _numFactController = TextEditingController();
 
-  File? _imagen;
+  Uint8List? _imageBytes;
+  String? _fileName;
+
+  // Usamos PlatformFile para manejar archivos en web (bytes) y en móvil (ruta)
   bool _isLoading = false;
   List<Empresa> _empresas = [];
   List<SocioNegocio> _socios = [];
@@ -53,7 +59,6 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
     _cargarDatosIniciales();
   }
 
-  // Método que genera la decoración común para campos de formulario
   InputDecoration _inputDecoration(String label, {IconData? icon}) {
     return InputDecoration(
       labelText: label,
@@ -75,7 +80,9 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
       _socioSeleccionado = null;
       _bancoSeleccionado = null;
       _monedaSeleccionada = 'BS';
-      _imagen = null;
+
+      _imageBytes = null;
+      _fileName = null;
       _docNumController.clear();
       _importeController.clear();
       _numFactController.clear();
@@ -109,7 +116,8 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
   Future<void> _cargarSocios(int codEmpresa) async {
     setState(() => _isLoading = true);
     try {
-      final sociosResult = await depositoRepository.getSociosNegocio(codEmpresa);
+      final sociosResult =
+          await depositoRepository.getSociosNegocio(codEmpresa);
       setState(() {
         _socios = sociosResult;
       });
@@ -120,30 +128,62 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
     }
   }
 
-  Future<void> _seleccionarImagen(ImageSource source) async {
+  /// Seleccionar imagen desde la galería (file_picker)
+  Future<void> _pickImage() async {
     try {
-      final XFile? imagen = await _picker.pickImage(
-        source: source,
-        imageQuality: 85,
-        maxWidth: 1024,
-        maxHeight: 1024,
-      );
-      if (imagen != null) {
+      final result = await ImagePickerHelper.pickImage();
+
+      if (result != null) {
         setState(() {
-          _imagen = File(imagen.path);
+          _imageBytes = result.bytes;
+          _fileName = result.fileName;
         });
       }
     } catch (e) {
-      _mostrarError('Error al seleccionar imagen: $e');
+      print('Error al seleccionar imagen: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Error al seleccionar imagen. Por favor, intente nuevamente.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
+  /// Capturar imagen usando la cámara (image_picker)
+  /*Future<void> _pickImageFromCamera() async {
+    final ImagePicker _picker = ImagePicker();
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 80,
+    );
+    if (image != null) {
+      final int size = await image.length();
+      Uint8List? imageBytes;
+      // En web se puede leer también la imagen (si el navegador lo soporta)
+      if (kIsWeb) {
+        imageBytes = await image.readAsBytes();
+      }
+      setState(() {
+        _imagenFile = PlatformFile(
+          name: image.name,
+          size: size,
+          path: image.path,
+          bytes: imageBytes,
+        );
+      });
+      print('Imagen capturada: ${_imagenFile!.name}');
+    } else {
+      print('No se capturó imagen');
+    }
+  }*/
+
   void _mostrarError(String mensaje) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(mensaje),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(mensaje), backgroundColor: Colors.red),
     );
   }
 
@@ -173,10 +213,7 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
       _mostrarError('Complete todos los campos requeridos');
       return;
     }
-    if (_imagen == null) {
-      _mostrarError('Debe seleccionar una imagen del cheque');
-      return;
-    }
+
     setState(() => _isLoading = true);
     try {
       final user = await _localStorageService.getUser();
@@ -191,7 +228,10 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
         numFact: int.parse(_numFactController.text),
         audUsuario: user?.codUsuario,
       );
-      final registroExitoso = await depositoRepository.registrarDeposito(deposito, _imagen!);
+      final registroExitoso = await depositoRepository.registrarDeposito(
+        deposito,
+        _imageBytes,
+      );
       if (registroExitoso) {
         _mostrarMensajeExito('Depósito registrado exitosamente');
         _limpiarFormulario();
@@ -230,8 +270,10 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Se decide mostrar el botón de cámara si la plataforma es Android o iOS
+    bool showCameraButton = (defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS);
     return Scaffold(
-      // AppBar con ícono y una tonalidad moderna
       appBar: AppBar(
         title: Row(
           children: const [
@@ -244,7 +286,6 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
         elevation: 1,
         backgroundColor: Colors.teal,
       ),
-      // Fondo degradado para dar un toque moderno
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -276,51 +317,60 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
                           const SizedBox(height: kFieldSpacing),
                           TextFormField(
                             controller: _docNumController,
-                            decoration: _inputDecoration('Número de Documento', icon: Icons.description),
+                            decoration: _inputDecoration('Número de Documento',
+                                icon: Icons.description),
                             keyboardType: TextInputType.number,
-                            validator: (value) => (value == null || value.isEmpty)
-                                ? 'Campo requerido'
-                                : null,
+                            validator: (value) =>
+                                (value == null || value.isEmpty)
+                                    ? 'Campo requerido'
+                                    : null,
                           ),
                           const SizedBox(height: kFieldSpacing),
                           TextFormField(
                             controller: _numFactController,
-                            decoration: _inputDecoration('Número de Factura', icon: Icons.receipt_long),
+                            decoration: _inputDecoration('Número de Factura',
+                                icon: Icons.receipt_long),
                             keyboardType: TextInputType.number,
-                            validator: (value) => (value == null || value.isEmpty)
-                                ? 'Campo requerido'
-                                : null,
+                            validator: (value) =>
+                                (value == null || value.isEmpty)
+                                    ? 'Campo requerido'
+                                    : null,
                           ),
                           const SizedBox(height: kFieldSpacing),
                           _buildBancoDropdown(),
                           const SizedBox(height: kFieldSpacing),
                           TextFormField(
                             controller: _importeController,
-                            decoration: _inputDecoration('Importe', icon: Icons.attach_money),
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: _inputDecoration('Importe',
+                                icon: Icons.attach_money),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
                             validator: (value) {
-                              if (value == null || value.isEmpty) return 'Campo requerido';
-                              if (double.tryParse(value) == null) return 'Importe inválido';
+                              if (value == null || value.isEmpty)
+                                return 'Campo requerido';
+                              if (double.tryParse(value) == null)
+                                return 'Importe inválido';
                               return null;
                             },
                           ),
                           const SizedBox(height: kFieldSpacing),
                           _buildMonedaDropdown(),
                           const SizedBox(height: kFieldSpacing * 1.5),
-                          _buildImagenSelector(),
+                          _buildImagenSelector(showCameraButton),
                           const SizedBox(height: kFieldSpacing * 1.5),
                           ElevatedButton.icon(
                             onPressed: _registrarDeposito,
                             icon: const Icon(Icons.send),
                             label: const Text(
                               'Registrar Depósito',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 20),
-                             
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(kBorderRadius),
+                                borderRadius:
+                                    BorderRadius.circular(kBorderRadius),
                               ),
                             ),
                           ),
@@ -350,7 +400,6 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
           _socioSeleccionado = null;
         });
         if (value != null) {
-          // Para ejemplificar alguna lógica según el código de empresa
           if (value.codEmpresa == 7) {
             _cargarSocios(1);
           } else {
@@ -367,7 +416,9 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GestureDetector(
-          onTap: _empresaSeleccionada == null ? null : () => _showClienteSearch(context),
+          onTap: _empresaSeleccionada == null
+              ? null
+              : () => _showClienteSearch(context),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             decoration: BoxDecoration(
@@ -385,26 +436,32 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
                         : '${_socioSeleccionado!.codCliente} - ${_socioSeleccionado!.nombreCompleto}',
                     style: TextStyle(
                       fontSize: 16,
-                      color: _socioSeleccionado == null ? Colors.grey.shade600 : Colors.black,
+                      color: _socioSeleccionado == null
+                          ? Colors.grey.shade600
+                          : Colors.black,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Icon(
                   Icons.arrow_drop_down,
-                  color: _empresaSeleccionada == null ? Colors.grey.shade400 : Colors.teal,
+                  color: _empresaSeleccionada == null
+                      ? Colors.grey.shade400
+                      : Colors.teal,
                 ),
               ],
             ),
           ),
         ),
         if (_socioSeleccionado == null &&
-            (_formKey.currentState != null && !_formKey.currentState!.validate()))
+            (_formKey.currentState != null &&
+                !_formKey.currentState!.validate()))
           Padding(
             padding: const EdgeInsets.only(top: 8, left: 4),
             child: Text(
               'Seleccione un cliente',
-              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.error),
+              style: TextStyle(
+                  fontSize: 12, color: Theme.of(context).colorScheme.error),
             ),
           ),
       ],
@@ -462,7 +519,44 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
     );
   }
 
-  Widget _buildImagenSelector() {
+  Widget _buildImagePreview() {
+    if (_imageBytes == null) return const SizedBox.shrink();
+
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(kBorderRadius),
+          child: Image.memory(
+            _imageBytes!,
+            height: 200,
+            width: double.infinity,
+            fit: BoxFit.cover,
+          ),
+        ),
+        Positioned(
+          top: 8,
+          right: 8,
+          child: Material(
+            color: Colors.white,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () => setState(() {
+                _imageBytes = null;
+                _fileName = null;
+              }),
+              child: const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Icon(Icons.close, size: 20),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImagenSelector(bool showCameraButton) {
     return Container(
       padding: const EdgeInsets.all(kPadding),
       decoration: BoxDecoration(
@@ -472,44 +566,18 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
       ),
       child: Column(
         children: [
-          if (_imagen != null)
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(kBorderRadius),
-                  child: Image.file(
-                    _imagen!,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Material(
-                    color: Colors.white,
-                    shape: const CircleBorder(),
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: () => setState(() => _imagen = null),
-                      child: const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Icon(Icons.close, size: 20),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          if (_imagen != null) const SizedBox(height: kFieldSpacing),
+          if (_imageBytes != null) ...[
+            _buildImagePreview(),
+            const SizedBox(height: kFieldSpacing),
+          ],
           Row(
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  icon: const Icon(Icons.camera_alt),
-                  label: const Text('Tomar Foto'),
-                  onPressed: () => _seleccionarImagen(ImageSource.camera),
+                  icon: const Icon(Icons.photo_library),
+                  label:
+                      Text(_imageBytes == null ? 'Galería' : 'Cambiar Imagen'),
+                  onPressed: _pickImage,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     shape: RoundedRectangleBorder(
@@ -518,26 +586,56 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
                   ),
                 ),
               ),
-              const SizedBox(width: kFieldSpacing),
-              Expanded(
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.photo_library),
-                  label: const Text('Galería'),
-                  onPressed: () => _seleccionarImagen(ImageSource.gallery),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(kBorderRadius),
+              if (showCameraButton) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.camera_alt),
+                    label: const Text('Cámara'),
+                    onPressed: _pickImageFromCamera,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(kBorderRadius),
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ],
       ),
     );
   }
+
+  Future<void> _pickImageFromCamera() async {  
+  try {  
+    final ImagePicker picker = ImagePicker();  
+    final XFile? image = await picker.pickImage(  
+      source: ImageSource.camera,  
+      imageQuality: 80,  
+    );  
+      
+    if (image != null) {  
+      final bytes = await image.readAsBytes();  
+      setState(() {  
+        _imageBytes = bytes;  
+        _fileName = image.name;  
+      });  
+    }  
+  } catch (e) {  
+    print('Error al capturar imagen: $e');  
+    if (mounted) {  
+      ScaffoldMessenger.of(context).showSnackBar(  
+        const SnackBar(  
+          content: Text('Error al capturar imagen. Por favor, intente nuevamente.'),  
+          backgroundColor: Colors.red,  
+        ),  
+      );  
+    }  
+  }  
+}
 }
 
 class _ClienteSearchModal extends StatefulWidget {
@@ -608,7 +706,8 @@ class _ClienteSearchModalState extends State<_ClienteSearchModal> {
                       },
                     )
                   : null,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             ),
             onChanged: _filterSocios,
           ),
@@ -622,7 +721,8 @@ class _ClienteSearchModalState extends State<_ClienteSearchModal> {
                       return InkWell(
                         onTap: () => widget.onSelect(socio),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(
                             border: Border(
                               bottom: BorderSide(color: Colors.grey.shade200),

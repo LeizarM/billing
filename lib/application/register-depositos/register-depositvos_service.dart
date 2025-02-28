@@ -1,7 +1,5 @@
-// lib/infrastructure/repositories/deposito_repository_impl.dart
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:billing/application/auth/local_storage_service.dart';
 import 'package:billing/constants/constants.dart';
 import 'package:billing/domain/register-depositos/ChBanco.dart';
@@ -10,6 +8,7 @@ import 'package:billing/domain/register-depositos/Empresa.dart';
 import 'package:billing/domain/register-depositos/SocioNegocio.dart';
 import 'package:billing/domain/register-depositos/register-depositos_repository.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http_parser/http_parser.dart';
 
 class DepositoRepositoryImpl implements DepositoRepository {
@@ -18,69 +17,64 @@ class DepositoRepositoryImpl implements DepositoRepository {
   final LocalStorageService _localStorageService = LocalStorageService();
 
   DepositoRepositoryImpl() {
-    _dio.options.validateStatus = (status) {
-      return status! < 500; // Acepta todos los códigos menores a 500 para manejarlos manualmente
-    };
+    _dio.options.validateStatus = (status) => status! < 500;
   }
 
   @override
-  Future<bool> registrarDeposito(DepositoCheque deposito, File imagen) async {
-    final token = await _localStorageService.getToken();
-
-    print(deposito.toJson());
-
-    try {
-      FormData formData = FormData.fromMap({
-        'depositoCheque': jsonEncode(deposito.toJson()),
-        'file': await MultipartFile.fromFile(
-          imagen.path,
-          contentType: MediaType('image', 'jpg'),
-        ),
-      });
-
-      final response = await _dio.post(
-        '$_baseUrl/registro',
-        data: formData,
-        options: Options(
-          headers: {'Authorization': 'Bearer $token'},
-        ),
-      );
-
-      // Manejar específicamente el código 409
-      if (response.statusCode == 409) {
-        throw DioException(
-          requestOptions: response.requestOptions,
-          response: response,
-          type: DioExceptionType.badResponse,
-          error: response.data['message'] ?? 'Error de validación en el servidor'
-        );
-      }
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        return true;
-      } else {
-        throw Exception(response.data['message'] ?? 'Error al registrar depósito');
-      }
-
-    } on DioException catch (e) {
-      if (e.response != null) {
-        // Obtener el mensaje de error del servidor si está disponible
-        final errorMessage = e.response?.data['message'] ?? 
-            'Error al procesar la solicitud en el servidor';
-        throw Exception(errorMessage);
-      } else {
-        // Error de red u otro tipo de error
-        throw Exception('Error de conexión: ${e.message}');
-      }
-    } catch (e) {
-      throw Exception('Error inesperado: $e');
-    }
+  Future<bool> registrarDeposito(DepositoCheque deposito, dynamic imagen) async {  
+    final token = await _localStorageService.getToken();  
+    try {  
+      MultipartFile multipartFile;  
+        
+      if (imagen is Uint8List) {  
+        multipartFile = MultipartFile.fromBytes(  
+          imagen,  
+          filename: "imagen.jpg",  
+          contentType: MediaType('image', 'jpeg'),  
+        );  
+      } else if (imagen is File) {  
+        multipartFile = await MultipartFile.fromFile(  
+          imagen.path,  
+          filename: "imagen.jpg",  
+          contentType: MediaType('image', 'jpeg'),  
+        );  
+      } else {  
+        throw Exception('Formato de imagen no soportado');  
+      }  
+  
+      FormData formData = FormData.fromMap({  
+        'depositoCheque': jsonEncode(deposito.toJson()),  
+        'file': multipartFile,  
+      });  
+  
+      final response = await _dio.post(  
+        '$_baseUrl/registro',  
+        data: formData,  
+        options: Options(  
+          headers: {'Authorization': 'Bearer $token'},  
+        ),  
+      );  
+  
+      if (response.statusCode == 409) {  
+        throw DioException(  
+          requestOptions: response.requestOptions,  
+          response: response,  
+          type: DioExceptionType.badResponse,  
+          error: response.data['message'] ?? 'Error de validación en el servidor',  
+        );  
+      }  
+  
+      return response.statusCode == 201 || response.statusCode == 200;  
+    } catch (e) {  
+      print('Error en registrarDeposito: $e');  
+      rethrow;  
+    }  
   }
 
   @override
   Future<List<ChBanco>> getBancos() async {
-   final token = await _localStorageService.getToken();
-   try {
+    final token = await _localStorageService.getToken();
+    try {
       final response = await _dio.post('$_baseUrl/lst-banco', options: Options(
           headers: {'Authorization': 'Bearer $token' },
         ));
@@ -121,6 +115,4 @@ class DepositoRepositoryImpl implements DepositoRepository {
       throw Exception('Error al obtener socios de negocio: $e');
     }
   }
-
-  // Implementa los otros métodos...
 }
