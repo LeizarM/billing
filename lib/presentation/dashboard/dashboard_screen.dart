@@ -23,14 +23,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = true;
   String? _errorMessage;
 
-  // Lista de rutas conocidas que existen en la aplicación
-  final List<String> _validRoutes = [
-    '/dashboard',
-    '/items',
-    '/profile',
-    // Añade aquí cualquier otra ruta válida que pueda aparecer en el menú
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -42,15 +34,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final userData = await _localStorageService.getUser();
       if (userData != null) {
-        List<Vista> menuItems = [];
-        
-        try {
-          menuItems = await _viewMenuService.obtainViewMenu(userData.codUsuario);
-        } catch (e) {
-          print('Error al obtener menú: $e');
-          // Continuar con un menú vacío en lugar de fallar completamente
-        }
-        
+        final menuItems =
+            await _viewMenuService.obtainViewMenu(userData.codUsuario);
         if (mounted) {
           setState(() {
             _userData = userData;
@@ -62,7 +47,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _setErrorState('No se pudo cargar la información del usuario.');
       }
     } catch (e) {
-      print('Error en _loadUserData: $e');
       _setErrorState('Error al cargar los datos: $e');
     }
   }
@@ -77,30 +61,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   List<Vista> _cleanMenuItems(List<Vista> items) {
-    try {
-      return items.where((item) {
-        if (item.items != null && item.items!.isNotEmpty) {
-          item.items = _cleanMenuItems(item.items!);
-          return item.items!.isNotEmpty;
-        }
-        return _isValidRoute(item.routerLink);
-      }).toList();
-    } catch (e) {
-      print('Error en _cleanMenuItems: $e');
-      // En caso de error, devolver la lista original
-      return items;
-    }
+    return items.where((item) {
+      if (item.items != null && item.items!.isNotEmpty) {
+        item.items = _cleanMenuItems(item.items!);
+        return item.items!.isNotEmpty;
+      }
+      return _isValidRoute(item.routerLink);
+    }).toList();
   }
 
   bool _isValidRoute(String? routerLink) {
     if (routerLink == null || routerLink.isEmpty) {
       return false;
     }
-    
-    // Usar un enfoque más seguro para validar rutas
-    bool isValid = _validRoutes.contains(routerLink);
+    bool isValid = _checkRouteExists(routerLink);
     print('Checking route: $routerLink, isValid: $isValid');
     return isValid;
+  }
+
+  bool _checkRouteExists(String routeName) {
+    final RouteFactory? generator =
+        Navigator.of(context).widget.onGenerateRoute;
+    if (generator == null) {
+      print('Route generator is null');
+      return false;
+    }
+    final Route<dynamic>? route = generator(RouteSettings(name: routeName));
+    return route != null;
   }
 
   @override

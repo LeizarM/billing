@@ -111,7 +111,7 @@ class AuthService implements AuthRepository {
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       
-      if (response.statusCode != 200) {
+      if (response.statusCode != 201) {
         throw Exception('Failed to change password: Server returned ${response.statusCode}');
       }
     } on DioException catch (e) {
