@@ -1,0 +1,2 @@
+E:/Proyectos/AppEsppapel/billing/android/app/.cxx/Debug/1448a2n1/armeabi-v7a/CMakeFiles/edit_cache.dir
+E:/Proyectos/AppEsppapel/billing/android/app/.cxx/Debug/1448a2n1/armeabi-v7a/CMakeFiles/rebuild_cache.dir
