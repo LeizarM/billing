@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:billing/application/auth/local_storage_service.dart';
 import 'package:billing/application/register-depositos/register-depositvos_service.dart';
+import 'package:billing/domain/register-depositos/BancoXCuenta.dart';
 import 'package:billing/domain/register-depositos/ChBanco.dart';
 import 'package:billing/domain/register-depositos/DepositoCheque.dart';
 import 'package:billing/domain/register-depositos/Empresa.dart';
@@ -30,9 +31,8 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
   final LocalStorageService _localStorageService = LocalStorageService();
   final DepositoRepositoryImpl depositoRepository = DepositoRepositoryImpl();
 
-  final TextEditingController _docNumController = TextEditingController();
+  // Removed _docNumController and _numFactController
   final TextEditingController _importeController = TextEditingController();
-  final TextEditingController _numFactController = TextEditingController();
 
   Uint8List? _imageBytes;
   String? _fileName;
@@ -41,11 +41,11 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
   bool _isLoading = false;
   List<Empresa> _empresas = [];
   List<SocioNegocio> _socios = [];
-  List<ChBanco> _bancos = [];
+  List<BancoXCuenta> _bancos = [];
 
   Empresa? _empresaSeleccionada;
   SocioNegocio? _socioSeleccionado;
-  ChBanco? _bancoSeleccionado;
+  BancoXCuenta? _bancoSeleccionado;
   String _monedaSeleccionada = 'BS';
 
   final List<Map<String, String>> _monedas = [
@@ -83,17 +83,15 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
 
       _imageBytes = null;
       _fileName = null;
-      _docNumController.clear();
+      // Removed clearing of _docNumController and _numFactController
       _importeController.clear();
-      _numFactController.clear();
     });
   }
 
   @override
   void dispose() {
-    _docNumController.dispose();
+    // Removed disposal of _docNumController and _numFactController
     _importeController.dispose();
-    _numFactController.dispose();
     super.dispose();
   }
 
@@ -101,10 +99,9 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
     setState(() => _isLoading = true);
     try {
       final empresasResult = await depositoRepository.getEmpresas();
-      final bancosResult = await depositoRepository.getBancos();
+      // Not loading banks yet since we don't have a selected company
       setState(() {
         _empresas = empresasResult;
-        _bancos = bancosResult;
       });
     } catch (e) {
       _mostrarError('Error al cargar datos iniciales: $e');
@@ -123,6 +120,22 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
       });
     } catch (e) {
       _mostrarError('Error al cargar socios: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  // New method to load banks dynamically based on selected company
+  Future<void> _cargarBancos(int codEmpresa) async {
+    setState(() => _isLoading = true);
+    try {
+      final bancosResult = await depositoRepository.getBancos(codEmpresa);
+      setState(() {
+        _bancos = bancosResult;
+        _bancoSeleccionado = null; // Reset the selected bank
+      });
+    } catch (e) {
+      _mostrarError('Error al cargar bancos: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -153,33 +166,6 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
     }
   }
 
-  /// Capturar imagen usando la cámara (image_picker)
-  /*Future<void> _pickImageFromCamera() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? image = await _picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 80,
-    );
-    if (image != null) {
-      final int size = await image.length();
-      Uint8List? imageBytes;
-      // En web se puede leer también la imagen (si el navegador lo soporta)
-      if (kIsWeb) {
-        imageBytes = await image.readAsBytes();
-      }
-      setState(() {
-        _imagenFile = PlatformFile(
-          name: image.name,
-          size: size,
-          path: image.path,
-          bytes: imageBytes,
-        );
-      });
-      print('Imagen capturada: ${_imagenFile!.name}');
-    } else {
-      print('No se capturó imagen');
-    }
-  }*/
 
   void _mostrarError(String mensaje) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -221,12 +207,11 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
         idDeposito: 0,
         codEmpresa: _empresaSeleccionada!.codEmpresa,
         codCliente: _socioSeleccionado!.codCliente,
-        docNum: int.tryParse(_docNumController.text),
-        codBanco: _bancoSeleccionado!.codBanco,
+        idBxC: _bancoSeleccionado!.idBxC,
         importe: double.parse(_importeController.text).toInt(),
         moneda: _monedaSeleccionada,
-        numFact: int.parse(_numFactController.text),
         audUsuario: user?.codUsuario,
+        // Removed docNum and numFact fields
       );
       final registroExitoso = await depositoRepository.registrarDeposito(
         deposito,
@@ -315,28 +300,7 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
                           const SizedBox(height: kFieldSpacing),
                           _buildClienteDropdown(),
                           const SizedBox(height: kFieldSpacing),
-                          TextFormField(
-                            controller: _docNumController,
-                            decoration: _inputDecoration('Número de Documento',
-                                icon: Icons.description),
-                            keyboardType: TextInputType.number,
-                            validator: (value) =>
-                                (value == null || value.isEmpty)
-                                    ? 'Campo requerido'
-                                    : null,
-                          ),
-                          const SizedBox(height: kFieldSpacing),
-                          TextFormField(
-                            controller: _numFactController,
-                            decoration: _inputDecoration('Número de Factura',
-                                icon: Icons.receipt_long),
-                            keyboardType: TextInputType.number,
-                            validator: (value) =>
-                                (value == null || value.isEmpty)
-                                    ? 'Campo requerido'
-                                    : null,
-                          ),
-                          const SizedBox(height: kFieldSpacing),
+                          // Removed TextFormField for document number and invoice number
                           _buildBancoDropdown(),
                           const SizedBox(height: kFieldSpacing),
                           TextFormField(
@@ -398,13 +362,18 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
         setState(() {
           _empresaSeleccionada = value;
           _socioSeleccionado = null;
+          _bancoSeleccionado = null;
         });
         if (value != null) {
+          // Load partners based on company code
           if (value.codEmpresa == 7) {
             _cargarSocios(1);
           } else {
             _cargarSocios(value.codEmpresa!);
           }
+          
+          // Now dynamically load banks based on the selected company
+          _cargarBancos(value.codEmpresa!);
         }
       },
       validator: (value) => value == null ? 'Seleccione una empresa' : null,
@@ -490,20 +459,28 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
   }
 
   Widget _buildBancoDropdown() {
-    return DropdownButtonFormField<ChBanco>(
+    return DropdownButtonFormField<BancoXCuenta>(
       decoration: _inputDecoration('Banco', icon: Icons.account_balance),
       value: _bancoSeleccionado,
+      isExpanded: true, // Add this to ensure the dropdown expands to full width
+      menuMaxHeight: 300, // Set a max height for the dropdown menu
       items: _bancos.map((banco) {
-        return DropdownMenuItem<ChBanco>(
+        return DropdownMenuItem<BancoXCuenta>(
           value: banco,
-          child: Text(banco.nombre ?? ''),
+          child: Text(
+            banco.nombreBanco ?? '',
+            overflow: TextOverflow.ellipsis, // Add text overflow handling
+            style: const TextStyle(
+              fontSize: 14, // Slightly smaller font size
+            ),
+          ),
         );
       }).toList(),
       onChanged: (value) => setState(() => _bancoSeleccionado = value),
       validator: (value) => value == null ? 'Seleccione un banco' : null,
     );
   }
-
+  
   Widget _buildMonedaDropdown() {
     return DropdownButtonFormField<String>(
       decoration: _inputDecoration('Moneda', icon: Icons.money),
