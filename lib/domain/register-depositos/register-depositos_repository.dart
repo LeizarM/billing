@@ -16,4 +16,6 @@ abstract class DepositoRepository {
 
   Future<List<NotaRemision>> getNotasRemision(int codEmpresa, String codCliente);
 
+  Future<bool> guardarNotaRemision(NotaRemision notaRemision);
+
 }

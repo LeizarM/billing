@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:billing/application/auth/local_storage_service.dart';
 import 'package:billing/constants/constants.dart';
 import 'package:billing/domain/register-depositos/BancoXCuenta.dart';
-import 'package:billing/domain/register-depositos/ChBanco.dart';
 import 'package:billing/domain/register-depositos/DepositoCheque.dart';
 import 'package:billing/domain/register-depositos/Empresa.dart';
 import 'package:billing/domain/register-depositos/NotaRemision.dart';
@@ -141,5 +140,27 @@ class DepositoRepositoryImpl implements DepositoRepository {
     } catch (e) {
       throw Exception('Error al obtener socios de negocio: $e');
     }
+  }
+  
+  @override
+  Future<bool> guardarNotaRemision(NotaRemision notaRemision) async {
+    
+    final token = await _localStorageService.getToken();
+
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/registrar-nota-remision',
+        data: notaRemision,
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+
+      return response.statusCode == 201 || response.statusCode == 200;
+    } catch (e) {
+      print('Error en guardarNotaRemision: $e');
+      rethrow;
+    }
+
   }
 }

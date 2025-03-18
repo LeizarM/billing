@@ -33,7 +33,10 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
   final LocalStorageService _localStorageService = LocalStorageService();
   final DepositoRepositoryImpl depositoRepository = DepositoRepositoryImpl();
 
+  // Importe field is now readonly, only shows calculated total
   final TextEditingController _importeController = TextEditingController();
+  // New controller for the "a cuenta" field
+  final TextEditingController _aCuentaController = TextEditingController(text: '0.00');
 
   Uint8List? _imageBytes;
   String? _fileName;
@@ -90,12 +93,14 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
       _imageBytes = null;
       _fileName = null;
       _importeController.clear();
+      _aCuentaController.text = '0.00'; // Reset a cuenta to default value
     });
   }
 
   @override
   void dispose() {
     _importeController.dispose();
+    _aCuentaController.dispose(); // Dispose the new controller
     super.dispose();
   }
 
@@ -212,6 +217,19 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
     );
   }
 
+  // Calculate the total of selected notas and "a cuenta" value
+  double _calcularTotalGeneral() {
+    double totalNotas = _calcularTotalNotasSeleccionadas();
+    double aCuenta = double.tryParse(_aCuentaController.text) ?? 0.0;
+    return totalNotas + aCuenta;
+  }
+
+  // Update the importe field whenever total changes
+  void _actualizarImporteTotal() {
+    final total = _calcularTotalGeneral();
+    _importeController.text = total.toStringAsFixed(2);
+  }
+
   Future<void> _registrarDeposito() async {
     if (!_formKey.currentState!.validate()) {
       _mostrarError('Complete todos los campos requeridos');
@@ -229,6 +247,7 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
         importe: double.parse(_importeController.text).toInt(),
         moneda: _monedaSeleccionada,
         audUsuario: user?.codUsuario,
+        aCuenta: double.parse(_aCuentaController.text).toInt(), // Add the "a cuenta" value
       );
       final registroExitoso = await depositoRepository.registrarDeposito(
         deposito,
@@ -326,19 +345,40 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
                           const SizedBox(height: kFieldSpacing),
                           _buildBancoDropdown(),
                           const SizedBox(height: kFieldSpacing),
+                          
+                          // Add the "a cuenta" field
                           TextFormField(
-                            controller: _importeController,
-                            decoration: _inputDecoration('Importe',
-                                icon: Icons.attach_money),
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true),
+                            controller: _aCuentaController,
+                            decoration: _inputDecoration('A Cuenta', icon: Icons.add_card),
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             validator: (value) {
-                              if (value == null || value.isEmpty)
+                              if (value == null || value.isEmpty) {
                                 return 'Campo requerido';
-                              if (double.tryParse(value) == null)
-                                return 'Importe inválido';
+                              }
+                              if (double.tryParse(value) == null) {
+                                return 'Valor inválido';
+                              }
                               return null;
                             },
+                            onChanged: (value) {
+                              // Update total when "a cuenta" changes
+                              setState(() {
+                                _actualizarImporteTotal();
+                              });
+                            },
+                          ),
+                          const SizedBox(height: kFieldSpacing),
+                          
+                          // Make importe field read-only
+                          TextFormField(
+                            controller: _importeController,
+                            decoration: _inputDecoration('Importe Total',
+                                icon: Icons.attach_money),
+                            readOnly: true, // Make it read-only
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.teal.shade700,
+                            ),
                           ),
                           const SizedBox(height: kFieldSpacing),
                           _buildMonedaDropdown(),
@@ -825,13 +865,9 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
           onSave: (selectedItems) {
             setState(() {
               _notasRemisionSeleccionadas = selectedItems;
-              if (selectedItems.isNotEmpty) {
-                final total = selectedItems.fold(
-                    0.0, (sum, nota) => sum + (nota.saldoPendiente ?? 0.0));
-                _importeController.text = total.toStringAsFixed(2);
-              } else {
-                _importeController.clear();
-              }
+              
+              // Update the total importe when selection changes
+              _actualizarImporteTotal();
             });
           },
         );

@@ -17,7 +17,7 @@ class DepositoCheque {
     String? moneda;
     int? estado;
     String? fotoPath;
-    int? aCuenta;
+    int? aCuenta; // Add new field for "a cuenta"
     DateTime? fechaI;
     String? nroTransaccion;
     int? audUsuario;
@@ -41,7 +41,7 @@ class DepositoCheque {
         this.moneda,
         this.estado,
         this.fotoPath,
-        this.aCuenta,
+        this.aCuenta = 0, // Default to 0
         this.fechaI,
         this.nroTransaccion,
         this.audUsuario,
