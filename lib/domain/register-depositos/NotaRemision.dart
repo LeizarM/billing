@@ -14,8 +14,8 @@ class NotaRemision {
     int? docNum;
     DateTime? fecha;
     int? numFact;
-    int? totalMonto;
-    int? saldoPendiente;
+    double? totalMonto;
+    double? saldoPendiente;
     int? audUsuario;
     String? codCliente;
     String? nombreCliente;

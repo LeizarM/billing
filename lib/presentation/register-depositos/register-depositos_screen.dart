@@ -6,12 +6,14 @@ import 'package:billing/domain/register-depositos/BancoXCuenta.dart';
 import 'package:billing/domain/register-depositos/ChBanco.dart';
 import 'package:billing/domain/register-depositos/DepositoCheque.dart';
 import 'package:billing/domain/register-depositos/Empresa.dart';
+import 'package:billing/domain/register-depositos/NotaRemision.dart';
 import 'package:billing/domain/register-depositos/SocioNegocio.dart';
 import 'package:billing/utils/image_picker_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 
 // Estilos globales
 const double kPadding = 16.0;
@@ -31,17 +33,19 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
   final LocalStorageService _localStorageService = LocalStorageService();
   final DepositoRepositoryImpl depositoRepository = DepositoRepositoryImpl();
 
-  // Removed _docNumController and _numFactController
   final TextEditingController _importeController = TextEditingController();
 
   Uint8List? _imageBytes;
   String? _fileName;
 
-  // Usamos PlatformFile para manejar archivos en web (bytes) y en móvil (ruta)
   bool _isLoading = false;
   List<Empresa> _empresas = [];
   List<SocioNegocio> _socios = [];
   List<BancoXCuenta> _bancos = [];
+
+  List<NotaRemision> _notasRemision = [];
+  List<NotaRemision> _notasRemisionSeleccionadas = [];
+  bool _loadingNotasRemision = false;
 
   Empresa? _empresaSeleccionada;
   SocioNegocio? _socioSeleccionado;
@@ -80,17 +84,17 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
       _socioSeleccionado = null;
       _bancoSeleccionado = null;
       _monedaSeleccionada = 'BS';
+      _notasRemision = [];
+      _notasRemisionSeleccionadas = [];
 
       _imageBytes = null;
       _fileName = null;
-      // Removed clearing of _docNumController and _numFactController
       _importeController.clear();
     });
   }
 
   @override
   void dispose() {
-    // Removed disposal of _docNumController and _numFactController
     _importeController.dispose();
     super.dispose();
   }
@@ -99,7 +103,6 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
     setState(() => _isLoading = true);
     try {
       final empresasResult = await depositoRepository.getEmpresas();
-      // Not loading banks yet since we don't have a selected company
       setState(() {
         _empresas = empresasResult;
       });
@@ -125,14 +128,13 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
     }
   }
 
-  // New method to load banks dynamically based on selected company
   Future<void> _cargarBancos(int codEmpresa) async {
     setState(() => _isLoading = true);
     try {
       final bancosResult = await depositoRepository.getBancos(codEmpresa);
       setState(() {
         _bancos = bancosResult;
-        _bancoSeleccionado = null; // Reset the selected bank
+        _bancoSeleccionado = null;
       });
     } catch (e) {
       _mostrarError('Error al cargar bancos: $e');
@@ -141,7 +143,24 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
     }
   }
 
-  /// Seleccionar imagen desde la galería (file_picker)
+  Future<void> _cargarNotasRemision(int codEmpresa, String codCliente) async {
+    setState(() => _loadingNotasRemision = true);
+    try {
+      final notasResult = await depositoRepository.getNotasRemision(
+        codEmpresa,
+        codCliente,
+      );
+      setState(() {
+        _notasRemision = notasResult;
+        _notasRemisionSeleccionadas = [];
+      });
+    } catch (e) {
+      _mostrarError('Error al cargar notas de remisión: $e');
+    } finally {
+      setState(() => _loadingNotasRemision = false);
+    }
+  }
+
   Future<void> _pickImage() async {
     try {
       final result = await ImagePickerHelper.pickImage();
@@ -165,7 +184,6 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
       }
     }
   }
-
 
   void _mostrarError(String mensaje) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -211,7 +229,6 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
         importe: double.parse(_importeController.text).toInt(),
         moneda: _monedaSeleccionada,
         audUsuario: user?.codUsuario,
-        // Removed docNum and numFact fields
       );
       final registroExitoso = await depositoRepository.registrarDeposito(
         deposito,
@@ -253,9 +270,14 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
     );
   }
 
+  double _calcularTotalNotasSeleccionadas() {
+    if (_notasRemisionSeleccionadas.isEmpty) return 0.0;
+    return _notasRemisionSeleccionadas.fold(
+        0.0, (sum, nota) => sum + (nota.saldoPendiente ?? 0.0));
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Se decide mostrar el botón de cámara si la plataforma es Android o iOS
     bool showCameraButton = (defaultTargetPlatform == TargetPlatform.android ||
         defaultTargetPlatform == TargetPlatform.iOS);
     return Scaffold(
@@ -300,7 +322,8 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
                           const SizedBox(height: kFieldSpacing),
                           _buildClienteDropdown(),
                           const SizedBox(height: kFieldSpacing),
-                          // Removed TextFormField for document number and invoice number
+                          _buildNotaRemisionSelector(),
+                          const SizedBox(height: kFieldSpacing),
                           _buildBancoDropdown(),
                           const SizedBox(height: kFieldSpacing),
                           TextFormField(
@@ -365,14 +388,11 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
           _bancoSeleccionado = null;
         });
         if (value != null) {
-          // Load partners based on company code
           if (value.codEmpresa == 7) {
             _cargarSocios(1);
           } else {
             _cargarSocios(value.codEmpresa!);
           }
-          
-          // Now dynamically load banks based on the selected company
           _cargarBancos(value.codEmpresa!);
         }
       },
@@ -452,6 +472,12 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
               _socioSeleccionado = cliente;
             });
             Navigator.pop(context);
+            if (_empresaSeleccionada != null && _socioSeleccionado != null) {
+              _cargarNotasRemision(
+                _empresaSeleccionada!.codEmpresa!,
+                _socioSeleccionado!.codCliente!,
+              );
+            }
           },
         );
       },
@@ -462,16 +488,16 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
     return DropdownButtonFormField<BancoXCuenta>(
       decoration: _inputDecoration('Banco', icon: Icons.account_balance),
       value: _bancoSeleccionado,
-      isExpanded: true, // Add this to ensure the dropdown expands to full width
-      menuMaxHeight: 300, // Set a max height for the dropdown menu
+      isExpanded: true,
+      menuMaxHeight: 300,
       items: _bancos.map((banco) {
         return DropdownMenuItem<BancoXCuenta>(
           value: banco,
           child: Text(
             banco.nombreBanco ?? '',
-            overflow: TextOverflow.ellipsis, // Add text overflow handling
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 14, // Slightly smaller font size
+              fontSize: 14,
             ),
           ),
         );
@@ -480,7 +506,7 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
       validator: (value) => value == null ? 'Seleccione un banco' : null,
     );
   }
-  
+
   Widget _buildMonedaDropdown() {
     return DropdownButtonFormField<String>(
       decoration: _inputDecoration('Moneda', icon: Icons.money),
@@ -613,6 +639,544 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
     }  
   }  
 }
+
+  Widget _buildNotaRemisionSelector() {
+    if (_socioSeleccionado == null) {
+      return const SizedBox.shrink();
+    }
+    
+    if (_loadingNotasRemision) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: const Center(
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
+
+    if (_notasRemision.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.orange.shade50,
+          borderRadius: BorderRadius.circular(kBorderRadius),
+          border: Border.all(color: Colors.orange.shade200),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.info_outline, color: Colors.orange),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'No hay notas de remisión disponibles para este cliente.',
+                style: TextStyle(color: Colors.orange),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final formatCurrency = NumberFormat.currency(
+      locale: 'es_BO',
+      symbol: '',
+      decimalDigits: 2,
+    );
+    
+    final totalSeleccionado = _calcularTotalNotasSeleccionadas();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () => _showNotaRemisionSelector(context),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade400),
+              borderRadius: BorderRadius.circular(kBorderRadius),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.receipt_long, color: Colors.teal),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _notasRemisionSeleccionadas.isEmpty
+                        ? 'Seleccionar notas de remisión'
+                        : '${_notasRemisionSeleccionadas.length} notas seleccionadas',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: _notasRemisionSeleccionadas.isEmpty
+                          ? Colors.grey.shade600
+                          : Colors.black,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const Icon(Icons.arrow_drop_down, color: Colors.teal),
+              ],
+            ),
+          ),
+        ),
+        
+        if (_notasRemisionSeleccionadas.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.teal.shade50,
+              borderRadius: BorderRadius.circular(kBorderRadius),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Notas seleccionadas:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.teal.shade700,
+                      ),
+                    ),
+                    Text(
+                      '${_notasRemisionSeleccionadas.length}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.teal.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Total:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.teal.shade700,
+                      ),
+                    ),
+                    Text(
+                      formatCurrency.format(totalSeleccionado),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.teal.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 16),
+                ..._notasRemisionSeleccionadas.take(3).map((nota) => 
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      'Doc: ${nota.docNum} - ${formatCurrency.format(nota.saldoPendiente ?? 0)}',
+                      style: const TextStyle(fontSize: 13),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                
+                if (_notasRemisionSeleccionadas.length > 3)
+                  Text(
+                    'y ${_notasRemisionSeleccionadas.length - 3} más...',
+                    style: TextStyle(
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey.shade700,
+                      fontSize: 13,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+        
+        if (_notasRemisionSeleccionadas.isEmpty &&
+            (_formKey.currentState != null &&
+                !_formKey.currentState!.validate()))
+          Padding(
+            padding: const EdgeInsets.only(top: 8, left: 4),
+            child: Text(
+              'Seleccione al menos una nota de remisión',
+              style: TextStyle(
+                  fontSize: 12, color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+      ],
+    );
+  }
+  
+  void _showNotaRemisionSelector(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return _NotaRemisionSelectorModal(
+          notas: _notasRemision,
+          selectedNotas: List.from(_notasRemisionSeleccionadas),
+          onSave: (selectedItems) {
+            setState(() {
+              _notasRemisionSeleccionadas = selectedItems;
+              if (selectedItems.isNotEmpty) {
+                final total = selectedItems.fold(
+                    0.0, (sum, nota) => sum + (nota.saldoPendiente ?? 0.0));
+                _importeController.text = total.toStringAsFixed(2);
+              } else {
+                _importeController.clear();
+              }
+            });
+          },
+        );
+      },
+    );
+  }
+}
+
+class _NotaRemisionSelectorModal extends StatefulWidget {
+  final List<NotaRemision> notas;
+  final List<NotaRemision> selectedNotas;
+  final Function(List<NotaRemision>) onSave;
+
+  const _NotaRemisionSelectorModal({
+    Key? key, 
+    required this.notas,
+    required this.selectedNotas,
+    required this.onSave,
+  }) : super(key: key);
+
+  @override
+  _NotaRemisionSelectorModalState createState() => _NotaRemisionSelectorModalState();
+}
+
+class _NotaRemisionSelectorModalState extends State<_NotaRemisionSelectorModal> {
+  late List<NotaRemision> _tempSelectedNotas;
+  final TextEditingController _searchController = TextEditingController();
+  List<NotaRemision> _filteredNotas = [];
+  
+  final formatCurrency = NumberFormat.currency(
+    locale: 'es_BO',
+    symbol: '',
+    decimalDigits: 2,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _tempSelectedNotas = List.from(widget.selectedNotas);
+    _filteredNotas = widget.notas;
+  }
+  
+  double _calcularTotal() {
+    return _tempSelectedNotas.fold(
+        0.0, (sum, nota) => sum + (nota.saldoPendiente ?? 0.0));
+  }
+  
+  void _filterNotas(String query) {
+    setState(() {
+      _filteredNotas = widget.notas.where((nota) {
+        final docNum = nota.docNum?.toString().toLowerCase() ?? '';
+        final numFact = nota.numFact?.toString().toLowerCase() ?? '';
+        final search = query.toLowerCase();
+        
+        return docNum.contains(search) || 
+               numFact.contains(search);
+      }).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.8,
+      padding: const EdgeInsets.all(kPadding),
+      child: Column(
+        children: [
+          Container(
+            height: 4,
+            width: 50,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Seleccionar notas de remisión',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Buscar por documento o factura...',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(kBorderRadius),
+              ),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        _filterNotas('');
+                      },
+                    )
+                  : null,
+            ),
+            onChanged: _filterNotas,
+          ),
+          const SizedBox(height: 16),
+          
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.teal.shade50,
+              borderRadius: BorderRadius.circular(kBorderRadius),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Seleccionados: ${_tempSelectedNotas.length}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'Total: ${formatCurrency.format(_calcularTotal())}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          
+          Row(
+            children: [
+              TextButton.icon(
+                icon: const Icon(Icons.check_box_outlined),
+                label: const Text('Seleccionar todos'),
+                onPressed: () {
+                  setState(() {
+                    _tempSelectedNotas = List.from(_filteredNotas);
+                  });
+                },
+              ),
+              const Spacer(),
+              TextButton.icon(
+                icon: const Icon(Icons.check_box_outline_blank),
+                label: const Text('Desmarcar todos'),
+                onPressed: () {
+                  setState(() {
+                    _tempSelectedNotas.clear();
+                  });
+                },
+              ),
+            ],
+          ),
+          
+          Expanded(
+            child: ListView.builder(
+              itemCount: _filteredNotas.length,
+              itemBuilder: (context, index) {
+                final nota = _filteredNotas[index];
+                final isSelected = _tempSelectedNotas.any(
+                  (selected) => selected.docNum == nota.docNum && 
+                               selected.numFact == nota.numFact
+                );
+                
+                final fecha = nota.fecha != null
+                    ? DateFormat('dd/MM/yyyy').format(nota.fecha!)
+                    : 'Sin fecha';
+                    
+                return Card(
+                  elevation: 0,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(kBorderRadius),
+                    side: BorderSide(
+                      color: isSelected ? Colors.teal : Colors.grey.shade300,
+                      width: isSelected ? 2 : 1,
+                    ),
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(kBorderRadius),
+                    onTap: () {
+                      setState(() {
+                        if (isSelected) {
+                          _tempSelectedNotas.removeWhere(
+                            (item) => item.docNum == nota.docNum && 
+                                     item.numFact == nota.numFact
+                          );
+                        } else {
+                          _tempSelectedNotas.add(nota);
+                        }
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Checkbox(
+                            value: isSelected,
+                            onChanged: (value) {
+                              setState(() {
+                                if (value == true) {
+                                  _tempSelectedNotas.add(nota);
+                                } else {
+                                  _tempSelectedNotas.removeWhere(
+                                    (item) => item.docNum == nota.docNum && 
+                                             item.numFact == nota.numFact
+                                  );
+                                }
+                              });
+                            },
+                            activeColor: Colors.teal,
+                          ),
+                          const SizedBox(width: 8),
+                          
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.description, size: 16, color: Colors.teal),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        'Doc: ${nota.docNum ?? 'N/A'}',
+                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.receipt, size: 16, color: Colors.teal),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Fact: ${nota.numFact ?? 'N/A'}',
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                
+                                Row(
+                                  children: [
+                                    const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        'Fecha: $fecha',
+                                        style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                
+                                Row(
+                                  children: [
+                                    const Icon(Icons.attach_money, size: 16, color: Colors.grey),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        'Monto: ${formatCurrency.format(nota.totalMonto ?? 0)}',
+                                        style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.account_balance_wallet, size: 16, color: Colors.grey),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Saldo: ${formatCurrency.format(nota.saldoPendiente ?? 0)}',
+                                      style: TextStyle(
+                                        fontSize: 13, 
+                                        color: Colors.grey.shade700,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(kBorderRadius),
+                      ),
+                    ),
+                    child: const Text('Cancelar'),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      widget.onSave(_tempSelectedNotas);
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(kBorderRadius),
+                      ),
+                    ),
+                    child: const Text('Guardar selección'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 }
 
 class _ClienteSearchModal extends StatefulWidget {

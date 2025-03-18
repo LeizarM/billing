@@ -6,6 +6,7 @@ import 'package:billing/domain/register-depositos/BancoXCuenta.dart';
 import 'package:billing/domain/register-depositos/ChBanco.dart';
 import 'package:billing/domain/register-depositos/DepositoCheque.dart';
 import 'package:billing/domain/register-depositos/Empresa.dart';
+import 'package:billing/domain/register-depositos/NotaRemision.dart';
 import 'package:billing/domain/register-depositos/SocioNegocio.dart';
 import 'package:billing/domain/register-depositos/register-depositos_repository.dart';
 import 'package:dio/dio.dart';
@@ -119,6 +120,24 @@ class DepositoRepositoryImpl implements DepositoRepository {
       );
       final data = response.data['data'] as List;
       return data.map((json) => SocioNegocio.fromJson(json)).toList();
+    } catch (e) {
+      throw Exception('Error al obtener socios de negocio: $e');
+    }
+  }
+
+  @override
+  Future<List<NotaRemision>> getNotasRemision( int codEmpresa, String codCliente ) async {
+    final token = await _localStorageService.getToken();
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/lst-notaRemision',
+        data: {'codEmpresaBosque': codEmpresa, 'codCliente': codCliente},
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+      final data = response.data['data'] as List;
+      return data.map((json) => NotaRemision.fromJson(json)).toList();
     } catch (e) {
       throw Exception('Error al obtener socios de negocio: $e');
     }
