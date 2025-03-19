@@ -3,13 +3,11 @@ import 'dart:typed_data';
 import 'package:billing/application/auth/local_storage_service.dart';
 import 'package:billing/application/register-depositos/register-depositvos_service.dart';
 import 'package:billing/domain/register-depositos/BancoXCuenta.dart';
-import 'package:billing/domain/register-depositos/ChBanco.dart';
 import 'package:billing/domain/register-depositos/DepositoCheque.dart';
 import 'package:billing/domain/register-depositos/Empresa.dart';
 import 'package:billing/domain/register-depositos/NotaRemision.dart';
 import 'package:billing/domain/register-depositos/SocioNegocio.dart';
 import 'package:billing/utils/image_picker_helper.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -39,9 +37,9 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
   final TextEditingController _aCuentaController = TextEditingController(text: '0.00');
 
   Uint8List? _imageBytes;
-  String? _fileName;
 
   bool _isLoading = false;
+  bool _savingNotas = false; // Track when notes are being saved
   List<Empresa> _empresas = [];
   List<SocioNegocio> _socios = [];
   List<BancoXCuenta> _bancos = [];
@@ -54,6 +52,10 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
   SocioNegocio? _socioSeleccionado;
   BancoXCuenta? _bancoSeleccionado;
   String _monedaSeleccionada = 'BS';
+
+  // Track progress for notes saving
+  int _savedNotesCount = 0;
+  int _totalNotesToSave = 0;
 
   final List<Map<String, String>> _monedas = [
     {'value': 'BS', 'label': 'Bolivianos'},
@@ -91,7 +93,6 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
       _notasRemisionSeleccionadas = [];
 
       _imageBytes = null;
-      _fileName = null;
       _importeController.clear();
       _aCuentaController.text = '0.00'; // Reset a cuenta to default value
     });
@@ -173,7 +174,6 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
       if (result != null) {
         setState(() {
           _imageBytes = result.bytes;
-          _fileName = result.fileName;
         });
       }
     } catch (e) {
@@ -236,8 +236,15 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
       return;
     }
 
+    // Validate that at least one nota de remisión is selected
+    if (_notasRemisionSeleccionadas.isEmpty) {
+      _mostrarError('Debe seleccionar al menos una nota de remisión');
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
+      // First register the deposit
       final user = await _localStorageService.getUser();
       final deposito = DepositoCheque(
         idDeposito: 0,
@@ -247,23 +254,69 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
         importe: double.parse(_importeController.text).toInt(),
         moneda: _monedaSeleccionada,
         audUsuario: user?.codUsuario,
-        aCuenta: double.parse(_aCuentaController.text).toInt(), // Add the "a cuenta" value
+        aCuenta: double.parse(_aCuentaController.text).toInt(),
       );
+      
+      // Register the deposit first
       final registroExitoso = await depositoRepository.registrarDeposito(
         deposito,
         _imageBytes,
       );
-      if (registroExitoso) {
-        _mostrarMensajeExito('Depósito registrado exitosamente');
-        _limpiarFormulario();
+      
+      if (!registroExitoso) {
+        _mostrarError('Error al registrar el depósito');
+        setState(() => _isLoading = false);
+        return;
       }
+      
+      // After deposit is registered successfully, save remittance notes
+      setState(() {
+        _savingNotas = true;
+        _totalNotesToSave = _notasRemisionSeleccionadas.length;
+        _savedNotesCount = 0;
+      });
+      
+      bool allNotesSaved = true;
+      
+      // Save each note individually
+      for (final nota in _notasRemisionSeleccionadas) {
+        // Update the user field before saving
+        nota.audUsuario = user?.codUsuario;
+        
+        final success = await depositoRepository.guardarNotaRemision(nota);
+        
+        if (!success) {
+          _mostrarError('Error al guardar la nota de remisión #${nota.docNum}');
+          allNotesSaved = false;
+          break;
+        }
+        
+        setState(() {
+          _savedNotesCount++;
+        });
+      }
+      
+      setState(() {
+        _savingNotas = false;
+      });
+      
+      if (allNotesSaved) {
+        _mostrarMensajeExito('Depósito y notas registrados exitosamente');
+        _limpiarFormulario();
+      } else {
+        _mostrarError('El depósito se registró pero hubo errores al guardar algunas notas');
+      }
+      
     } catch (e) {
       final errorMsg = e.toString().contains('Exception:')
           ? e.toString().split('Exception: ')[1]
           : e.toString();
       _mostrarErrorDialog(errorMsg);
     } finally {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _savingNotas = false;
+      });
     }
   }
 
@@ -320,8 +373,22 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
             end: Alignment.bottomCenter,
           ),
         ),
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+        child: _isLoading || _savingNotas
+            ? Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text(
+                      _savingNotas 
+                        ? 'Guardando notas de remisión ($_savedNotesCount/$_totalNotesToSave)...' 
+                        : 'Procesando...',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
+              )
             : SingleChildScrollView(
                 padding: const EdgeInsets.all(kPadding),
                 child: Card(
@@ -586,7 +653,6 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
               customBorder: const CircleBorder(),
               onTap: () => setState(() {
                 _imageBytes = null;
-                _fileName = null;
               }),
               child: const Padding(
                 padding: EdgeInsets.all(8.0),
@@ -664,7 +730,6 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
       final bytes = await image.readAsBytes();  
       setState(() {  
         _imageBytes = bytes;  
-        _fileName = image.name;  
       });  
     }  
   } catch (e) {  

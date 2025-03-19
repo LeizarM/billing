@@ -148,11 +148,19 @@ class DepositoRepositoryImpl implements DepositoRepository {
     final token = await _localStorageService.getToken();
 
     try {
+      // Convert NotaRemision to a JSON map first
+      final jsonData = notaRemision.toJson();
+      
+      debugPrint('jsonData: $jsonData');
+
       final response = await _dio.post(
         '$_baseUrl/registrar-nota-remision',
-        data: notaRemision,
+        data: jsonData,
         options: Options(
-          headers: {'Authorization': 'Bearer $token'},
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
         ),
       );
 
@@ -161,6 +169,5 @@ class DepositoRepositoryImpl implements DepositoRepository {
       print('Error en guardarNotaRemision: $e');
       rethrow;
     }
-
   }
 }
