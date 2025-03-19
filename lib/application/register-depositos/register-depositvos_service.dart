@@ -135,10 +135,21 @@ class DepositoRepositoryImpl implements DepositoRepository {
           headers: {'Authorization': 'Bearer $token'},
         ),
       );
-      final data = response.data['data'] as List;
-      return data.map((json) => NotaRemision.fromJson(json)).toList();
+      
+      // Check if response has data and it's a list
+      if (response.data != null && 
+          response.data['data'] != null && 
+          response.data['data'] is List) {
+        final data = response.data['data'] as List;
+        return data.map((json) => NotaRemision.fromJson(json)).toList();
+      }
+      
+      // Return empty list if there's no data
+      return [];
     } catch (e) {
-      throw Exception('Error al obtener socios de negocio: $e');
+      // Log the error but return empty list instead of throwing
+      print('Error al obtener notas de remisión: $e');
+      return [];
     }
   }
   

@@ -39,6 +39,7 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
   Uint8List? _imageBytes;
 
   bool _isLoading = false;
+  bool _loadingSocios = false; // Add loading state for clients
   bool _savingNotas = false; // Track when notes are being saved
   List<Empresa> _empresas = [];
   List<SocioNegocio> _socios = [];
@@ -120,17 +121,22 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
   }
 
   Future<void> _cargarSocios(int codEmpresa) async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _loadingSocios = true; // Set loading state when starting to fetch
+      _socios = []; // Clear previous clients
+    });
+    
     try {
-      final sociosResult =
-          await depositoRepository.getSociosNegocio(codEmpresa);
+      final sociosResult = await depositoRepository.getSociosNegocio(codEmpresa);
       setState(() {
         _socios = sociosResult;
       });
     } catch (e) {
       _mostrarError('Error al cargar socios: $e');
     } finally {
-      setState(() => _isLoading = false);
+      setState(() {
+        _loadingSocios = false; // Clear loading state when done
+      });
     }
   }
 
@@ -192,7 +198,7 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
 
   void _mostrarError(String mensaje) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(mensaje), backgroundColor: Colors.red),
+      SnackBar(content: Text(mensaje), backgroundColor: const Color.fromARGB(255, 240, 63, 51)),
     );
   }
 
@@ -236,9 +242,10 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
       return;
     }
 
-    // Validate that at least one nota de remisión is selected
-    if (_notasRemisionSeleccionadas.isEmpty) {
-      _mostrarError('Debe seleccionar al menos una nota de remisión');
+    // Check if either notes are selected or there's an "a cuenta" amount
+    double aCuenta = double.tryParse(_aCuentaController.text) ?? 0.0;
+    if (_notasRemisionSeleccionadas.isEmpty && aCuenta <= 0) {
+      _mostrarError('Debe seleccionar al menos una nota de remisión o ingresar un monto a cuenta');
       return;
     }
 
@@ -324,8 +331,8 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Row(
-          children: const [
+        title: const Row(
+          children: [
             Icon(Icons.error_outline, color: Colors.red),
             SizedBox(width: 8),
             Text('Error'),
@@ -354,8 +361,8 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
         defaultTargetPlatform == TargetPlatform.iOS);
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: const [
+        title: const Row(
+          children: [
             Icon(Icons.account_balance_wallet),
             SizedBox(width: 8),
             Text('Registrar Depósito'),
@@ -378,13 +385,13 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
                     Text(
                       _savingNotas 
                         ? 'Guardando notas de remisión ($_savedNotesCount/$_totalNotesToSave)...' 
                         : 'Procesando...',
-                      style: TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ],
                 ),
@@ -526,22 +533,43 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
                 const Icon(Icons.person, color: Colors.teal),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    _socioSeleccionado == null
-                        ? 'Seleccione un cliente'
-                        : '${_socioSeleccionado!.codCliente} - ${_socioSeleccionado!.nombreCompleto}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: _socioSeleccionado == null
-                          ? Colors.grey.shade600
-                          : Colors.black,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  child: _loadingSocios
+                      ? Row(
+                          children: [
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.teal),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Cargando clientes...',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          _socioSeleccionado == null
+                              ? 'Seleccione un cliente'
+                              : '${_socioSeleccionado!.codCliente} - ${_socioSeleccionado!.nombreCompleto}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: _socioSeleccionado == null
+                                ? Colors.grey.shade600
+                                : Colors.black,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                 ),
                 Icon(
                   Icons.arrow_drop_down,
-                  color: _empresaSeleccionada == null
+                  color: _empresaSeleccionada == null || _loadingSocios
                       ? Colors.grey.shade400
                       : Colors.teal,
                 ),
@@ -565,6 +593,28 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
   }
 
   void _showClienteSearch(BuildContext context) {
+    // Don't show the modal if we're still loading clients
+    if (_loadingSocios) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cargando lista de clientes...'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+      return;
+    }
+    
+    // Only show modal if we have clients loaded
+    if (_socios.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No hay clientes disponibles para esta empresa'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
