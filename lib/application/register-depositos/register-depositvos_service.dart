@@ -80,17 +80,34 @@ class DepositoRepositoryImpl implements DepositoRepository {
     final token = await _localStorageService.getToken();
 
     try {
+      debugPrint('📊 API Request: Getting banks for company $codEmpresa');
       final response = await _dio.post('$_baseUrl/lst-banco',
           data: {
             'codEmpresa': codEmpresa,
           },
           options: Options(
             headers: {'Authorization': 'Bearer $token'},
+            // Add timeouts for better error handling
+            sendTimeout: const Duration(seconds: 10),
+            receiveTimeout: const Duration(seconds: 10),
           ));
+      
+      debugPrint('📊 API Response for banks: ${response.statusCode}');
+      
+      // Add safety checks for the response data
+      if (response.data == null || response.data['data'] == null) {
+        debugPrint('⚠️ Bank API returned empty or invalid data');
+        return [];
+      }
+      
       final data = response.data['data'] as List;
-      return data.map((json) => BancoXCuenta.fromJson(json)).toList();
+      final banks = data.map((json) => BancoXCuenta.fromJson(json)).toList();
+      debugPrint('📊 Got ${banks.length} banks for company $codEmpresa');
+      return banks;
     } catch (e) {
-      throw Exception('Error al obtener bancos: $e');
+      debugPrint('❌ Error getting banks: $e');
+      // Return empty list instead of throwing to prevent UI disruption
+      return [];
     }
   }
 
@@ -129,27 +146,35 @@ class DepositoRepositoryImpl implements DepositoRepository {
   Future<List<NotaRemision>> getNotasRemision( int codEmpresa, String codCliente ) async {
     final token = await _localStorageService.getToken();
     try {
+      debugPrint('📑 API Request: Getting notes for company $codEmpresa, client $codCliente');
       final response = await _dio.post(
         '$_baseUrl/lst-notaRemision',
         data: {'codEmpresaBosque': codEmpresa, 'codCliente': codCliente},
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
+          sendTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 15),
         ),
       );
+      
+      debugPrint('📑 API Response for notes: ${response.statusCode}');
       
       // Check if response has data and it's a list
       if (response.data != null && 
           response.data['data'] != null && 
           response.data['data'] is List) {
-        final data = response.data['data'] as List;
-        return data.map((json) => NotaRemision.fromJson(json)).toList();
+        final data = response.data['data'] as List<dynamic>;
+        final notes = data.map((json) => NotaRemision.fromJson(json)).toList();
+        debugPrint('📑 Got ${notes.length} notes for client $codCliente');
+        return notes;
       }
       
+      debugPrint('⚠️ No notes data found in response');
       // Return empty list if there's no data
       return [];
     } catch (e) {
       // Log the error but return empty list instead of throwing
-      print('Error al obtener notas de remisión: $e');
+      debugPrint('❌ Error getting notes: $e');
       return [];
     }
   }

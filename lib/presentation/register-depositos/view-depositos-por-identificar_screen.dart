@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:billing/presentation/register-depositos/edit-deposito-identificar_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:billing/domain/register-depositos/DepositoCheque.dart';
@@ -11,6 +13,445 @@ import 'package:billing/domain/register-depositos/BancoXCuenta.dart';
 import 'package:billing/domain/register-depositos/NotaRemision.dart';
 import 'package:billing/utils/image_picker_helper.dart';
 import 'package:image_picker/image_picker.dart';
+
+// High-performance direct search client component
+class ClienteSearchField extends StatefulWidget {
+  final DepositoRepository repository;
+  final Empresa? empresa;
+  final SocioNegocio? initialValue;
+  final Function(SocioNegocio) onSelect;
+  final bool enabled;
+
+  const ClienteSearchField({
+    Key? key,
+    required this.repository,
+    required this.empresa,
+    this.initialValue,
+    required this.onSelect,
+    this.enabled = true,
+  }) : super(key: key);
+
+  @override
+  State<ClienteSearchField> createState() => _ClienteSearchFieldState();
+}
+
+class _ClienteSearchFieldState extends State<ClienteSearchField> {
+  // We'll use a debounced search timer
+  Timer? _debounceTimer;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Cliente', style: TextStyle(fontSize: 12, color: Colors.grey)),
+        const SizedBox(height: 4),
+        InkWell(
+          onTap: !widget.enabled || widget.empresa == null ? null : () {
+            _showSearchDialog(context);
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: BoxDecoration(
+              border: Border.all(color: widget.enabled ? Colors.grey.shade400 : Colors.grey.shade200),
+              borderRadius: BorderRadius.circular(8),
+              color: widget.enabled ? null : Colors.grey.shade50,
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.person, color: Colors.teal),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.initialValue == null
+                      ? 'Buscar cliente...'
+                      : '${widget.initialValue!.codCliente} - ${widget.initialValue!.nombreCompleto}',
+                    style: TextStyle(
+                      color: widget.initialValue == null ? Colors.grey.shade600 : Colors.black87,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const Icon(Icons.search, color: Colors.teal),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showSearchDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => _DirectSearchDialog(
+        repository: widget.repository,
+        empresa: widget.empresa!,
+        onSelect: (cliente) {
+          widget.onSelect(cliente);
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+  
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+}
+
+// Highly optimized direct search dialog
+class _DirectSearchDialog extends StatefulWidget {
+  final DepositoRepository repository;
+  final Empresa empresa;
+  final Function(SocioNegocio) onSelect;
+
+  const _DirectSearchDialog({
+    Key? key,
+    required this.repository,
+    required this.empresa,
+    required this.onSelect,
+  }) : super(key: key);
+
+  @override
+  State<_DirectSearchDialog> createState() => _DirectSearchDialogState();
+}
+
+class _DirectSearchDialogState extends State<_DirectSearchDialog> {
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounceTimer;
+  List<SocioNegocio> _searchResults = [];
+  bool _isSearching = false;
+  String _errorMessage = '';
+  bool _hasSearched = false;
+  
+  // Track recent selections for quick access
+  List<SocioNegocio> _recentSelections = [];
+  bool _showRecents = true;
+  
+  @override
+  void initState() {
+    super.initState();
+    // We could load recent selections from local storage here
+    _searchController.addListener(_onSearchChanged);
+  }
+  
+  void _onSearchChanged() {
+    if (_searchController.text.isEmpty) {
+      setState(() {
+        _showRecents = true;
+        _searchResults = [];
+        _isSearching = false;
+        _hasSearched = false;
+      });
+      return;
+    }
+    
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 400), () {
+      final query = _searchController.text;
+      if (query.length >= 3) {
+        _performSearch(query);
+      } else {
+        setState(() {
+          _showRecents = true;
+          _searchResults = [];
+          _hasSearched = false;
+        });
+      }
+    });
+  }
+
+  Future<void> _performSearch(String query) async {
+    if (query.length < 3) return;
+    
+    setState(() {
+      _isSearching = true;
+      _errorMessage = '';
+      _showRecents = false;
+    });
+    
+    try {
+      // Load a small subset of clients from server based on search query
+      // Since we don't have a direct API for searching clients, we'll simulate it
+      final allClients = await widget.repository.getSociosNegocio(widget.empresa.codEmpresa!);
+      
+      // Filter locally - in a real app, this filtering would be done on the server
+      final filteredClients = allClients.where((client) {
+        final nombre = client.nombreCompleto?.toLowerCase() ?? '';
+        final codigo = client.codCliente?.toLowerCase() ?? '';
+        final searchLower = query.toLowerCase();
+        return nombre.contains(searchLower) || codigo.contains(searchLower);
+      }).take(20).toList(); // Only take first 20 results for performance
+      
+      setState(() {
+        _searchResults = filteredClients;
+        _isSearching = false;
+        _hasSearched = true;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error al buscar clientes: $e';
+        _isSearching = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAliasWithSaveLayer,
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        height: MediaQuery.of(context).size.height * 0.7,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                const Icon(Icons.search, color: Colors.teal),
+                const SizedBox(width: 8),
+                const Text(
+                  'Buscar Cliente',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            
+            // Search box
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Ingrese al menos 3 caracteres para buscar',
+                  prefixIcon: const Icon(Icons.person_search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                          },
+                        )
+                      : null,
+                ),
+                autofocus: true,
+              ),
+            ),
+            
+            // Status messages
+            if (_isSearching)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.teal),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text('Buscando clientes...'),
+                  ],
+                ),
+              ),
+              
+            if (_errorMessage.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.all(8),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.red),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(_errorMessage, style: const TextStyle(color: Colors.red))),
+                  ],
+                ),
+              ),
+              
+            if (_hasSearched && _searchResults.isEmpty && !_isSearching)
+              Container(
+                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.orange),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'No se encontraron clientes con "${_searchController.text}"',
+                        style: const TextStyle(color: Colors.orange),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+            if (!_hasSearched && _searchController.text.length < 3 && _searchResults.isEmpty && !_isSearching && !_showRecents)
+              Container(
+                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.blue),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Ingrese al menos 3 caracteres para iniciar la búsqueda',
+                        style: TextStyle(color: Colors.blue),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            
+            // Results list
+            Expanded(
+              child: _hasSearched 
+                ? ListView.builder(
+                    itemCount: _searchResults.length,
+                    itemBuilder: (context, index) {
+                      final cliente = _searchResults[index];
+                      return _buildClientItem(cliente);
+                    },
+                  )
+                : _showRecents && _recentSelections.isNotEmpty
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                          child: Text('Selecciones recientes:', 
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: _recentSelections.length,
+                            itemBuilder: (context, index) {
+                              final cliente = _recentSelections[index];
+                              return _buildClientItem(cliente);
+                            },
+                          ),
+                        ),
+                      ],
+                    )
+                  : Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.search, size: 48, color: Colors.grey.shade300),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Busque un cliente por nombre o código',
+                            style: TextStyle(color: Colors.grey.shade600),
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildClientItem(SocioNegocio cliente) {
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: InkWell(
+        onTap: () => widget.onSelect(cliente),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.teal.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.person, color: Colors.teal),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      cliente.nombreCompleto ?? '',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Código: ${cliente.codCliente}',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+}
 
 class ViewDepositosPorIdentificarScreen extends StatefulWidget {
   const ViewDepositosPorIdentificarScreen({super.key});
@@ -64,6 +505,9 @@ class _ViewDepositosPorIdentificarScreenState
   late DateTime _startDate;
   late DateTime _endDate;
   
+  Timer? _notesResetTimer;
+  Timer? _bankResetTimer;
+
   @override
   void initState() {
     super.initState();
@@ -86,6 +530,8 @@ class _ViewDepositosPorIdentificarScreenState
     _endDateController.dispose();
     _importeController.dispose();
     _aCuentaController.dispose();
+    _notesResetTimer?.cancel();
+    _bankResetTimer?.cancel();
     super.dispose();
   }
   
@@ -101,76 +547,95 @@ class _ViewDepositosPorIdentificarScreenState
     }
   }
   
-  // Load clients based on selected company - with improved error handling
-  Future<void> _cargarSocios(int codEmpresa) async {
-    // Always reset loading state at the start
+  // Load banks based on selected company
+  Future<void> _cargarBancos(int codEmpresa) async {
+    // Cancel any existing auto-reset timer
+    _bankResetTimer?.cancel();
+    
+    print('🏦 Loading banks for company $codEmpresa'); // Debug log
+    
+    // Clear the current bank list and selection before loading new ones
     setState(() {
-      _loadingSocios = true;
-      _socios = [];
+      _isLoading = true;
+      _bancos = []; // Clear existing banks immediately
+      _bancoSeleccionado = null; // Reset selection
+    });
+    
+    // Set up a safety timeout to force reset loading state after 8 seconds
+    _bankResetTimer = Timer(const Duration(seconds: 8), () {
+      if (mounted && _isLoading) {
+        print('⚠️ Force resetting bank loading state after timeout'); // Debug log
+        setState(() => _isLoading = false);
+      }
     });
     
     try {
-      // Add a timeout to prevent infinite loading
-      final sociosResult = await _depositoRepository.getSociosNegocio(codEmpresa)
-          .timeout(
-            const Duration(seconds: 15),
-            onTimeout: () {
-              _mostrarError('Tiempo de espera agotado al cargar clientes');
-              return <SocioNegocio>[];
-            },
-          );
-          
-      // Force update the state regardless of mounted state
+      final bancosResult = await _depositoRepository.getBancos(codEmpresa);
+      
+      print('✅ Banks loaded: ${bancosResult.length}'); // Debug log
+      
+      // Always ensure we update the state properly
       if (mounted) {
         setState(() {
-          _socios = sociosResult;
-          _loadingSocios = false; // Explicitly set to false
+          _bancos = bancosResult;
+          _isLoading = false; // Explicitly set to false
+          print('💾 State updated with banks: ${_bancos.length}');
         });
       }
     } catch (e) {
-      _mostrarError('Error al cargar socios: $e');
-    } finally {
-      // Always ensure loading state is cleared, even on errors
-      if (mounted && _loadingSocios) {
-        setState(() {
-          _loadingSocios = false;
-        });
-      }
-    }
-  }
-  
-  // Load banks based on selected company
-  Future<void> _cargarBancos(int codEmpresa) async {
-    setState(() => _isLoading = true);
-    try {
-      final bancosResult = await _depositoRepository.getBancos(codEmpresa);
-      setState(() {
-        _bancos = bancosResult;
-        _bancoSeleccionado = null;
-      });
-    } catch (e) {
+      print('❌ Error loading banks: $e'); // Debug log
       _mostrarError('Error al cargar bancos: $e');
-    } finally {
-      setState(() => _isLoading = false);
+      
+      // Ensure loading state is reset even on errors
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
   
-  // Load remission notes based on selected company and client
+  // Load remission notes based on selected company and client with improved error handling
   Future<void> _cargarNotasRemision(int codEmpresa, String codCliente) async {
+    // Cancel any existing auto-reset timer
+    _notesResetTimer?.cancel();
+    
+    print('⬇️ Starting to load notes for client $codCliente'); // Debug log
+    
+    // IMPORTANT: Always reset state at the beginning
     setState(() => _loadingNotasRemision = true);
+    
+    // Set up a safety timeout to force reset loading state after 8 seconds
+    _notesResetTimer = Timer(const Duration(seconds: 8), () {
+      if (mounted && _loadingNotasRemision) {
+        print('⚠️ Force resetting notes loading state after timeout'); // Debug log
+        setState(() => _loadingNotasRemision = false);
+      }
+    });
+    
     try {
       final notasResult = await _depositoRepository.getNotasRemision(
         codEmpresa,
         codCliente,
       );
-      setState(() {
-        _notasRemision = notasResult;
-        _notasRemisionSeleccionadas = [];
-      });
+      
+      print('✅ Notes loaded: ${notasResult.length}'); // Debug log
+      
+      // Always ensure we update the state after loading, regardless of result
+      if (mounted) {
+        setState(() {
+          _notasRemision = notasResult;
+          _notasRemisionSeleccionadas = [];
+          _loadingNotasRemision = false; // Explicitly set to false
+        });
+      }
+      
     } catch (e) {
+      print('❌ Error loading notes: $e'); // Debug log
       _mostrarError('Error al cargar notas de remisión: $e');
-    } finally {
-      setState(() => _loadingNotasRemision = false);
+      
+      // Ensure loading state is reset even on errors
+      if (mounted) {
+        setState(() => _loadingNotasRemision = false);
+      }
     }
   }
   
@@ -472,10 +937,16 @@ class _ViewDepositosPorIdentificarScreenState
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.blue),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.edit, size: 16),
+                              label: const Text('Editar'),
                               onPressed: () => _showEditDialog(deposito),
-                              tooltip: 'Editar',
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                textStyle: const TextStyle(fontSize: 12),
+                              ),
                             ),
                           ],
                         ),
@@ -579,620 +1050,24 @@ class _ViewDepositosPorIdentificarScreenState
 
   // Update to handle specific deposit with full functionality
   void _showEditDialog([DepositoCheque? deposito]) {
-    // Reset form state first
-    setState(() {
-      _socioSeleccionado = null;
-      _bancoSeleccionado = null;
-      _notasRemisionSeleccionadas = [];
-      _imageBytes = null;
-      _aCuentaController.text = '0.00';
-      _importeController.clear();
-    });
-    
-    // Initialize with deposit data if editing
-    if (deposito != null) {
-      // Set empresa based on deposit
-      if (deposito.codEmpresa != null) {
-        _empresaSeleccionada = _empresas.firstWhere(
-          (e) => e.codEmpresa == deposito.codEmpresa,
-          orElse: () => Empresa(),
-        );
-        
-        // Load socios and bancos for this empresa
-        if (_empresaSeleccionada?.codEmpresa != null) {
-
-
-          
-          _cargarSocios(_empresaSeleccionada!.codEmpresa!);
-          _cargarBancos(_empresaSeleccionada!.codEmpresa!);
-        }
-      }
-      
-      // Set amount values
-      _importeController.text = deposito.importe?.toStringAsFixed(2) ?? '0.00';
-      _aCuentaController.text = deposito.aCuenta?.toStringAsFixed(2) ?? '0.00';
-      
-      // Set currency
-      _monedaSeleccionada = deposito.moneda ?? 'BS';
-    }
-    
-    // Create a form key for validation
-    final formKey = GlobalKey<FormState>();
-    
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          // Helper function to update both dialog state and widget state
-          void setLocalState(Function() fn) {
-            setState(fn);
-            this.setState(fn);
-          }
-          
-          return Dialog(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 800,
-                maxHeight: 800,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Dialog title
-                      Row(
-                        children: [
-                          const Icon(Icons.edit_document, color: Colors.teal),
-                          const SizedBox(width: 8),
-                          const Expanded(
-                            child: Text(
-                              'Actualización de Depósito',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                      const Divider(),
-                      const SizedBox(height: 8),
-                      
-                      // Dialog content in a scrollable container
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Deposit info section
-                              _buildDepositInfoSection(deposito),
-                              const SizedBox(height: 20),
-                              
-                              // Company selection
-                              DropdownButtonFormField<Empresa>(
-                                decoration: InputDecoration(
-                                  labelText: 'Empresa',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  prefixIcon: const Icon(Icons.business),
-                                ),
-                                value: _empresaSeleccionada,
-                                items: _empresas.map((empresa) {
-                                  return DropdownMenuItem<Empresa>(
-                                    value: empresa,
-                                    child: Text(empresa.nombre ?? ''),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  setLocalState(() {
-                                    _empresaSeleccionada = value;
-                                    _socioSeleccionado = null;
-                                    _bancoSeleccionado = null;
-                                    _notasRemisionSeleccionadas = [];
-                                  });
-                                  if (value != null && value.codEmpresa != null) {
-                                    _cargarSocios(value.codEmpresa!);
-                                    _cargarBancos(value.codEmpresa!);
-                                  }
-                                },
-                                validator: (value) => value == null ? 'Seleccione una empresa' : null,
-                              ),
-                              const SizedBox(height: 16),
-                              
-                              // Client selection
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Cliente', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                                  const SizedBox(height: 4),
-                                  GestureDetector(
-                                    onTap: _empresaSeleccionada == null || _loadingSocios ? null : () {
-                                      // Force reset loader first to avoid UI getting stuck
-                                      if (_loadingSocios) {
-                                        setLocalState(() {
-                                          _loadingSocios = false;
-                                        });
-                                        Future.delayed(const Duration(milliseconds: 100), () {
-                                          _showClienteSearch(context, setState, setLocalState);
-                                        });
-                                      } else {
-                                        _showClienteSearch(context, setState, setLocalState);
-                                      }
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          color: _loadingSocios ? Colors.orange : Colors.grey.shade400,
-                                        ),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.person, 
-                                            color: _loadingSocios ? Colors.orange : Colors.teal),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: _loadingSocios
-                                              ? Row(
-                                                  children: [
-                                                    SizedBox(
-                                                      width: 16, height: 16,
-                                                      child: CircularProgressIndicator(
-                                                        strokeWidth: 2,
-                                                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.orange),
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    const Text('Cargando clientes...'),
-                                                  ],
-                                                )
-                                              : Text(
-                                                  _socioSeleccionado == null
-                                                    ? 'Seleccione un cliente'
-                                                    : '${_socioSeleccionado!.codCliente} - ${_socioSeleccionado!.nombreCompleto}',
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                          ),
-                                          Icon(
-                                            _loadingSocios ? Icons.hourglass_top : Icons.arrow_drop_down,
-                                            color: _loadingSocios ? Colors.orange : Colors.teal,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              
-                              // Bank selection
-                              DropdownButtonFormField<BancoXCuenta>(
-                                decoration: InputDecoration(
-                                  labelText: 'Banco',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  prefixIcon: const Icon(Icons.account_balance),
-                                ),
-                                value: _bancoSeleccionado,
-                                isExpanded: true,
-                                items: _bancos.map((banco) {
-                                  return DropdownMenuItem<BancoXCuenta>(
-                                    value: banco,
-                                    child: Text(
-                                      banco.nombreBanco ?? '',
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  setLocalState(() => _bancoSeleccionado = value);
-                                },
-                                validator: (value) => value == null ? 'Seleccione un banco' : null,
-                              ),
-                              const SizedBox(height: 16),
-                              
-                              // Notas de remisión selector
-                              if (_socioSeleccionado != null)
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text('Notas de Remisión', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                                    const SizedBox(height: 4),
-                                    GestureDetector(
-                                      onTap: () => _showNotaRemisionSelector(context, setState, setLocalState),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                        decoration: BoxDecoration(
-                                          border: Border.all(color: Colors.grey.shade400),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            const Icon(Icons.receipt_long, color: Colors.teal),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: _loadingNotasRemision
-                                                ? const Row(
-                                                    children: [
-                                                      SizedBox(
-                                                        width: 16,
-                                                        height: 16,
-                                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                                      ),
-                                                      SizedBox(width: 8),
-                                                      Text('Cargando notas...'),
-                                                    ],
-                                                  )
-                                                : Text(
-                                                    _notasRemisionSeleccionadas.isEmpty
-                                                      ? 'Seleccionar notas de remisión'
-                                                      : '${_notasRemisionSeleccionadas.length} notas seleccionadas',
-                                                  ),
-                                            ),
-                                            const Icon(Icons.arrow_drop_down),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    if (_notasRemisionSeleccionadas.isNotEmpty)
-                                      Container(
-                                        margin: const EdgeInsets.only(top: 8),
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey.shade100,
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text('Total: ${_formatCurrency(_calcularTotalNotasSeleccionadas())}'),
-                                            const Divider(),
-                                            for (var nota in _notasRemisionSeleccionadas.take(3))
-                                              Text('Doc: ${nota.docNum} - ${_formatCurrency(nota.saldoPendiente)}'),
-                                            if (_notasRemisionSeleccionadas.length > 3)
-                                              Text('y ${_notasRemisionSeleccionadas.length - 3} más...'),
-                                          ],
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              const SizedBox(height: 16),
-                              
-                              // A cuenta field
-                              TextFormField(
-                                controller: _aCuentaController,
-                                decoration: InputDecoration(
-                                  labelText: 'A Cuenta',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  prefixIcon: const Icon(Icons.add_card),
-                                ),
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Campo requerido';
-                                  }
-                                  if (double.tryParse(value) == null) {
-                                    return 'Valor inválido';
-                                  }
-                                  return null;
-                                },
-                                onChanged: (value) {
-                                  _actualizarImporteTotal();
-                                  setState(() {}); // Update the dialog state
-                                },
-                              ),
-                              const SizedBox(height: 16),
-                              
-                              // Importe total (read-only)
-                              TextFormField(
-                                controller: _importeController,
-                                decoration: InputDecoration(
-                                  labelText: 'Importe Total',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  prefixIcon: const Icon(Icons.attach_money),
-                                ),
-                                readOnly: true,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              
-                              // Moneda dropdown
-                              DropdownButtonFormField<String>(
-                                decoration: InputDecoration(
-                                  labelText: 'Moneda',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  prefixIcon: const Icon(Icons.currency_exchange),
-                                ),
-                                value: _monedaSeleccionada,
-                                items: _monedas.map((moneda) {
-                                  return DropdownMenuItem<String>(
-                                    value: moneda['value'],
-                                    child: Text(moneda['label']!),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  if (value != null) {
-                                    setLocalState(() => _monedaSeleccionada = value);
-                                  }
-                                },
-                              ),
-                              const SizedBox(height: 20),
-                              
-                              // Image selector
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade50,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.grey.shade300),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text('Comprobante de Depósito',
-                                        style: TextStyle(
-                                          fontSize: 14, 
-                                          fontWeight: FontWeight.bold
-                                        )
-                                    ),
-                                    const SizedBox(height: 8),
-                                    if (_imageBytes != null) ...[
-                                      Stack(
-                                        children: [
-                                          ClipRRect(
-                                            borderRadius: BorderRadius.circular(8),
-                                            child: Image.memory(
-                                              _imageBytes!,
-                                              height: 200,
-                                              width: double.infinity,
-                                              fit: BoxFit.cover,
-                                            ),
-                                          ),
-                                          Positioned(
-                                            top: 8,
-                                            right: 8,
-                                            child: Material(
-                                              color: Colors.white,
-                                              shape: const CircleBorder(),
-                                              child: InkWell(
-                                                customBorder: const CircleBorder(),
-                                                onTap: () => setLocalState(() {
-                                                  _imageBytes = null;
-                                                }),
-                                                child: const Padding(
-                                                  padding: EdgeInsets.all(8.0),
-                                                  child: Icon(Icons.close, size: 20),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 16),
-                                    ],
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: ElevatedButton.icon(
-                                            icon: const Icon(Icons.photo_library),
-                                            label: Text(_imageBytes == null ? 'Galería' : 'Cambiar Imagen'),
-                                            onPressed: () {
-                                              _pickImage().then((_) => setState(() {}));
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              padding: const EdgeInsets.symmetric(vertical: 12),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: ElevatedButton.icon(
-                                            icon: const Icon(Icons.camera_alt),
-                                            label: const Text('Cámara'),
-                                            onPressed: () {
-                                              _pickImageFromCamera().then((_) => setState(() {}));
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              padding: const EdgeInsets.symmetric(vertical: 12),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      
-                      // Dialog action buttons
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Cancelar'),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.save),
-                            label: const Text('Guardar Cambios'),
-                            onPressed: () {
-                              if (formKey.currentState!.validate()) {
-                                _guardarDeposito(deposito, context);
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              backgroundColor: Colors.teal,
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  // Method to save the deposit
-  Future<void> _guardarDeposito(DepositoCheque? deposito, BuildContext context) async {
-    if (_empresaSeleccionada == null ||
-        _socioSeleccionado == null ||
-        _bancoSeleccionado == null) {
-      _mostrarError('Complete todos los campos requeridos');
+    if (deposito == null) {
+      _mostrarError('No se puede editar un depósito vacío');
       return;
     }
     
-    // Check if either notes are selected or there's an "a cuenta" amount
-    double aCuenta = double.tryParse(_aCuentaController.text) ?? 0.0;
-    if (_notasRemisionSeleccionadas.isEmpty && aCuenta <= 0) {
-      _mostrarError('Debe seleccionar al menos una nota de remisión o ingresar un monto a cuenta');
-      return;
-    }
-    
-    setState(() => _isLoading = true);
-    
-    try {
-      // Prepare the deposit object
-      final depositoActualizado = DepositoCheque(
-        idDeposito: deposito?.idDeposito ?? 0,
-        codEmpresa: _empresaSeleccionada!.codEmpresa,
-        codCliente: _socioSeleccionado!.codCliente,
-        idBxC: _bancoSeleccionado!.idBxC,
-        importe: double.parse(_importeController.text),
-        moneda: _monedaSeleccionada,
-        audUsuario: deposito?.audUsuario ?? 0,
-        aCuenta: double.parse(_aCuentaController.text),
-      );
-      
-      // Register or update the deposit
-      final exito = await _depositoRepository.registrarDeposito(
-        depositoActualizado,
-        _imageBytes as File,
-      );
-      
-      if (!exito) {
-        _mostrarError('Error al guardar el depósito');
-        setState(() => _isLoading = false);
-        return;
-      }
-      
-      // Save remission notes
-      bool allNotesSaved = true;
-      
-      for (final nota in _notasRemisionSeleccionadas) {
-        final success = await _depositoRepository.guardarNotaRemision(nota);
-        
-        if (!success) {
-          _mostrarError('Error al guardar la nota de remisión #${nota.docNum}');
-          allNotesSaved = false;
-          break;
-        }
-      }
-      
-      if (allNotesSaved) {
-        _mostrarMensajeExito('Depósito actualizado exitosamente');
-        Navigator.pop(context); // Close the dialog
-        _fetchDepositos(); // Refresh the deposits list
-      } else {
-        _mostrarError('El depósito se guardó pero hubo errores al guardar algunas notas');
-      }
-    } catch (e) {
-      _mostrarError('Error al guardar el depósito: $e');
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  // Client search dialog
-  void _showClienteSearch(BuildContext context, StateSetter setState, Function(Function()) setLocalState) {
-    // Don't show if we're still loading clients
-    if (_loadingSocios) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cargando lista de clientes...'),
-          duration: Duration(seconds: 1),
-        ),
-      );
-      return;
-    }
-    
-    // Only show modal if we have clients loaded
-    if (_socios.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No hay clientes disponibles para esta empresa'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-    
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return _ClienteSearchModal(
-          socios: _socios,
-          onSelect: (cliente) {
-            setLocalState(() {
-              _socioSeleccionado = cliente;
-            });
-            Navigator.pop(context);
-            
-            if (_empresaSeleccionada != null && _socioSeleccionado != null) {
-              _cargarNotasRemision(
-                _empresaSeleccionada!.codEmpresa!,
-                _socioSeleccionado!.codCliente!,
-              );
-            }
-            
-            setState(() {});  // Update dialog state
+    // Navigate to the edit screen instead of showing a dialog
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditDepositoScreen(
+          deposito: deposito,
+          onSaved: () {
+            // Refresh the list when we return after saving
+            _fetchDepositos();
+            _mostrarMensajeExito('Depósito actualizado correctamente');
           },
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -1388,161 +1263,6 @@ class _ViewDepositosPorIdentificarScreenState
         ),
       ],
     );
-  }
-}
-
-// Client search modal component
-class _ClienteSearchModal extends StatefulWidget {
-  final List<SocioNegocio> socios;
-  final Function(SocioNegocio) onSelect;
-
-  const _ClienteSearchModal({
-    Key? key,
-    required this.socios,
-    required this.onSelect,
-  }) : super(key: key);
-
-  @override
-  _ClienteSearchModalState createState() => _ClienteSearchModalState();
-}
-
-class _ClienteSearchModalState extends State<_ClienteSearchModal> {
-  final TextEditingController _searchController = TextEditingController();
-  late List<SocioNegocio> _filteredSocios;
-
-  @override
-  void initState() {
-    super.initState();
-    _filteredSocios = widget.socios;
-  }
-
-  void _filterSocios(String query) {
-    setState(() {
-      _filteredSocios = widget.socios.where((socio) {
-        final nombre = socio.nombreCompleto?.toLowerCase() ?? '';
-        final codigo = socio.codCliente?.toLowerCase() ?? '';
-        final search = query.toLowerCase();
-        return nombre.contains(search) || codigo.contains(search);
-      }).toList();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.8,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Container(
-            height: 4,
-            width: 50,
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Row(
-            children: [
-              const Icon(Icons.person_search, color: Colors.teal),
-              const SizedBox(width: 8),
-              const Text(
-                'Seleccionar Cliente',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Spacer(),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Buscar cliente...',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                        _filterSocios('');
-                      },
-                    )
-                  : null,
-            ),
-            onChanged: _filterSocios,
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: _filteredSocios.isNotEmpty
-                ? ListView.builder(
-                    itemCount: _filteredSocios.length,
-                    itemBuilder: (context, index) {
-                      final socio = _filteredSocios[index];
-                      return InkWell(
-                        onTap: () => widget.onSelect(socio),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: Colors.grey.shade200),
-                            ),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.person, color: Colors.teal),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      socio.nombreCompleto ?? '',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Código: ${socio.codCliente}',
-                                      style: TextStyle(
-                                        color: Colors.grey.shade600,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  )
-                : const Center(child: Text('No se encontraron clientes')),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 }
 
