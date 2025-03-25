@@ -264,22 +264,14 @@ class NotaRemisionSelectorModalState extends State<NotaRemisionSelectorModal> {
                                     const SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
-                                        'Monto: ${formatCurrency.format(nota.totalMonto ?? 0)}',
-                                        style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                                        'Saldo: ${formatCurrency.format(nota.saldoPendiente ?? 0)}',
+                                        style: TextStyle(
+                                          fontSize: 13, 
+                                          color: Colors.grey.shade700,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    const Icon(Icons.account_balance_wallet, size: 16, color: Colors.grey),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'Saldo: ${formatCurrency.format(nota.saldoPendiente ?? 0)}',
-                                      style: TextStyle(
-                                        fontSize: 13, 
-                                        color: Colors.grey.shade700,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ],
                                 ),
