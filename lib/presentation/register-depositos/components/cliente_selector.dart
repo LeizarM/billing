@@ -21,6 +21,11 @@ class ClienteSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Check if the selected client is "Todos"
+    final isTodos = selectedCliente != null && 
+                   selectedCliente!.codCliente == "" && 
+                   selectedCliente!.nombreCompleto == "Todos";
+                   
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -44,7 +49,9 @@ class ClienteSelector extends StatelessWidget {
                   child: Text(
                     selectedCliente == null
                         ? 'Seleccione un cliente'
-                        : '${selectedCliente!.codCliente} - ${selectedCliente!.nombreCompleto}',
+                        : isTodos
+                            ? 'Todos'
+                            : '${selectedCliente!.codCliente} - ${selectedCliente!.nombreCompleto}',
                     style: TextStyle(
                       fontSize: 16,
                       color: selectedCliente == null

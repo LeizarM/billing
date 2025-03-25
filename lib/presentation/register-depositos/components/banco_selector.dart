@@ -6,12 +6,14 @@ class BancoSelector extends StatelessWidget {
   final BancoXCuenta? selectedBanco;
   final List<BancoXCuenta> bancos;
   final Function(BancoXCuenta?) onChanged;
+  final bool enableValidation;
 
   const BancoSelector({
     Key? key,
     required this.selectedBanco,
     required this.bancos,
     required this.onChanged,
+    this.enableValidation = true,
   }) : super(key: key);
 
   @override
@@ -34,7 +36,11 @@ class BancoSelector extends StatelessWidget {
         );
       }).toList(),
       onChanged: onChanged,
-      validator: (value) => value == null ? 'Seleccione un banco' : null,
+      validator: enableValidation 
+        ? (value) => value == null || (value.idBxC == 0 && enableValidation) 
+            ? 'Seleccione un banco' 
+            : null
+        : null,
     );
   }
 }

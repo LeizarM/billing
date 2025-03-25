@@ -13,13 +13,14 @@ class DepositoCheque {
     String? codCliente;
     int? codEmpresa;
     int? idBxC;
-    int? importe;
+    double? importe;
     String? moneda;
     int? estado;
     String? fotoPath;
-    int? aCuenta; // Add new field for "a cuenta"
+    double? aCuenta;
     DateTime? fechaI;
     String? nroTransaccion;
+    String? obs;
     int? audUsuario;
     int? codBanco;
     DateTime? fechaInicio;
@@ -31,6 +32,7 @@ class DepositoCheque {
     String? fechasDeDepositos;
     String? numeroDeFacturas;
     String? totalMontos;
+    String? estadoFiltro;
 
     DepositoCheque({
         this.idDeposito,
@@ -41,9 +43,10 @@ class DepositoCheque {
         this.moneda,
         this.estado,
         this.fotoPath,
-        this.aCuenta = 0, // Default to 0
+        this.aCuenta,
         this.fechaI,
         this.nroTransaccion,
+        this.obs,
         this.audUsuario,
         this.codBanco,
         this.fechaInicio,
@@ -55,6 +58,7 @@ class DepositoCheque {
         this.fechasDeDepositos,
         this.numeroDeFacturas,
         this.totalMontos,
+        this.estadoFiltro,
     });
 
     factory DepositoCheque.fromJson(Map<String, dynamic> json) => DepositoCheque(
@@ -69,6 +73,7 @@ class DepositoCheque {
         aCuenta: json["aCuenta"],
         fechaI: json["fechaI"] == null ? null : DateTime.parse(json["fechaI"]),
         nroTransaccion: json["nroTransaccion"],
+        obs: json["obs"],
         audUsuario: json["audUsuario"],
         codBanco: json["codBanco"],
         fechaInicio: json["fechaInicio"] == null ? null : DateTime.parse(json["fechaInicio"]),
@@ -80,6 +85,7 @@ class DepositoCheque {
         fechasDeDepositos: json["fechasDeDepositos"],
         numeroDeFacturas: json["numeroDeFacturas"],
         totalMontos: json["totalMontos"],
+        estadoFiltro: json["estadoFiltro"],
     );
 
     Map<String, dynamic> toJson() => {
@@ -94,6 +100,7 @@ class DepositoCheque {
         "aCuenta": aCuenta,
         "fechaI": fechaI?.toIso8601String(),
         "nroTransaccion": nroTransaccion,
+        "obs": obs,
         "audUsuario": audUsuario,
         "codBanco": codBanco,
         "fechaInicio": fechaInicio?.toIso8601String(),
@@ -105,5 +112,6 @@ class DepositoCheque {
         "fechasDeDepositos": fechasDeDepositos,
         "numeroDeFacturas": numeroDeFacturas,
         "totalMontos": totalMontos,
+        "estadoFiltro": estadoFiltro,
     };
 }

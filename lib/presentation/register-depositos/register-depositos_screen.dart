@@ -258,10 +258,10 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
         codEmpresa: _empresaSeleccionada!.codEmpresa,
         codCliente: _socioSeleccionado!.codCliente,
         idBxC: _bancoSeleccionado!.idBxC,
-        importe: double.parse(_importeController.text).toInt(),
+        importe: double.parse(_importeController.text).toDouble(),
         moneda: _monedaSeleccionada,
         audUsuario: user?.codUsuario,
-        aCuenta: double.parse(_aCuentaController.text).toInt(),
+        aCuenta: double.parse(_aCuentaController.text).toDouble(),
       );
       
       // Register the deposit first

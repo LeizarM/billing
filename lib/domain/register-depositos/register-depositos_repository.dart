@@ -18,4 +18,6 @@ abstract class DepositoRepository {
 
   Future<bool> guardarNotaRemision(NotaRemision notaRemision);
 
+  Future<List<DepositoCheque>> obtenerDepositos( int codEmpresa, int idBxC, DateTime fechaInicio,  DateTime fechaFin,  String codCliente,  String estadoFiltro );
+
 }

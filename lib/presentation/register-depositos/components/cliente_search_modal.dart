@@ -154,7 +154,10 @@ void showClienteSearch(
     builder: (context) {
       return ClienteSearchModal(
         socios: socios,
-        onSelect: onSelect,
+        onSelect: (socio) {
+          onSelect(socio);
+          Navigator.pop(context); // Asegurar que el modal se cierre después de la selección
+        },
       );
     },
   );

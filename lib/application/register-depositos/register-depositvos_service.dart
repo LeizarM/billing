@@ -11,6 +11,7 @@ import 'package:billing/domain/register-depositos/register-depositos_repository.
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:intl/intl.dart';
 
 class DepositoRepositoryImpl implements DepositoRepository {
   final Dio _dio = Dio();
@@ -179,6 +180,78 @@ class DepositoRepositoryImpl implements DepositoRepository {
     } catch (e) {
       print('Error en guardarNotaRemision: $e');
       rethrow;
+    }
+  }
+  
+  @override
+  Future<List<DepositoCheque>> obtenerDepositos(int codEmpresa, int idBxC, DateTime fechaInicio, DateTime fechaFin, String codCliente, String estadoFiltro) async {
+    final token = await _localStorageService.getToken();
+    
+    // Formatear fechas en el formato que espera el API
+    final fechaInicioStr = DateFormat('yyyy-MM-dd').format(fechaInicio);
+    final fechaFinStr = DateFormat('yyyy-MM-dd').format(fechaFin);
+    
+    // Crear el objeto de datos para el request
+    final Map<String, dynamic> requestData = {
+      'codEmpresa': codEmpresa,
+      'idBxC': idBxC,
+      'fechaInicio': fechaInicioStr,
+      'fechaFin': fechaFinStr,
+      'codCliente': codCliente,
+      'estadoFiltro': estadoFiltro,
+    };
+    
+    // Imprimir los datos del request para depuración
+    debugPrint('Request data: $requestData');
+    
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/listar',
+        data: requestData,
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+      
+      debugPrint('Response status: ${response.statusCode}');
+      
+      // Robust handling for different response formats
+      if (response.data != null) {
+        try {
+          // Print response structure for debugging
+          debugPrint('Response type: ${response.data.runtimeType}');
+          
+          List<dynamic> dataList;
+          
+          if (response.data is Map) {
+            // Handle case where response.data is a Map with 'data' key
+            if (response.data.containsKey('data')) {
+              dataList = response.data['data'] as List<dynamic>;
+            } else {
+              debugPrint('Response data does not contain "data" key: ${response.data.keys}');
+              return [];
+            }
+          } else if (response.data is List) {
+            // Handle case where response.data is directly a List
+            dataList = response.data as List<dynamic>;
+          } else {
+            debugPrint('Unexpected response format: ${response.data}');
+            return [];
+          }
+          
+          return dataList.map((json) => DepositoCheque.fromJson(json)).toList();
+        } catch (e) {
+          debugPrint('Error parsing response data: $e');
+          return [];
+        }
+      }
+      
+      // Return empty list if there's no data
+      return [];
+    } catch (e) {
+      // Log the error but return empty list instead of throwing
+      debugPrint('Error al obtener depósitos: $e');
+      return [];
     }
   }
 }
