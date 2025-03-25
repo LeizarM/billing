@@ -1,5 +1,3 @@
-
-
 import 'dart:io';
 
 import 'package:billing/domain/register-depositos/BancoXCuenta.dart';
@@ -19,5 +17,10 @@ abstract class DepositoRepository {
   Future<bool> guardarNotaRemision(NotaRemision notaRemision);
 
   Future<List<DepositoCheque>> obtenerDepositos( int codEmpresa, int idBxC, DateTime fechaInicio,  DateTime fechaFin,  String codCliente,  String estadoFiltro );
+  
+  Future<List<DepositoCheque>> lstDepositxIdentificar( int idBxC, DateTime fechaInicio,  DateTime fechaFin,  String codCliente );
 
+  // Consider adding a method for searching clients directly
+  // This would be ideal but would require backend changes
+  // Future<List<SocioNegocio>> buscarSociosNegocio(int codEmpresa, String searchTerm);
 }

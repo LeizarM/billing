@@ -254,4 +254,53 @@ class DepositoRepositoryImpl implements DepositoRepository {
       return [];
     }
   }
+  
+  @override
+  Future<List<DepositoCheque>> lstDepositxIdentificar(int idBxC, DateTime fechaInicio, DateTime fechaFin, String codCliente) async {
+    final token = await _localStorageService.getToken();
+    
+    // Formatear fechas en el formato que espera el API
+    final fechaInicioStr = DateFormat('yyyy-MM-dd').format(fechaInicio);
+    final fechaFinStr = DateFormat('yyyy-MM-dd').format(fechaFin);
+    
+    // Asegurar que idBxC sea 0 si es necesario y codCliente sea una cadena vacía si es nulo
+    final int safeIdBxC = 0; // Siempre enviar 0 como mencionado
+    final String safeCodeClient = codCliente.isEmpty ? " " : codCliente;
+    
+    // Crear el objeto de datos para el request
+    final Map<String, dynamic> requestData = {
+      'idBxC': safeIdBxC,
+      'fechaInicio': fechaInicioStr,
+      'fechaFin': fechaFinStr,
+      'codCliente': safeCodeClient,
+    };
+    
+    debugPrint('Request data for lstDepositxIdentificar: $requestData');
+    
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/listar-dep-identificar', // Ajuste el endpoint si es necesario
+        data: requestData,
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+      
+      debugPrint('Response status: ${response.statusCode}');
+      
+      if (response.statusCode == 200 && response.data != null) {
+        // La respuesta tiene la estructura {"message": "...", "data": [...], "status": 200}
+        if (response.data is Map && response.data.containsKey('data')) {
+          final data = response.data['data'] as List<dynamic>;
+          return data.map((json) => DepositoCheque.fromJson(json)).toList();
+        }
+      }
+      
+      // Return empty list if there's no data or incorrect format
+      return [];
+    } catch (e) {
+      debugPrint('Error en lstDepositxIdentificar: $e');
+      return []; // Return empty list on error
+    }
+  }
 }

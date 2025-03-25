@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:billing/infrastructure/register-depositos/file_picker_helper.dart';
+import 'package:billing/presentation/register-depositos/view-depositos-por-identificar_screen.dart';
 import 'package:billing/presentation/register-depositos/view-depositos_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -104,6 +105,8 @@ class MyApp extends StatelessWidget {
         'tpre_Solicitud/VerSolicitud': (context) => const DriverViewCarScreen(),
         'tdep_Deposito/Registro': (context) => const  RegistrarDepositoPage(),
         'tdep_Deposito/View': (context) => const  ViewDepositosScreen(),
+        'tdep_DepositoIde/View': (context) => const  ViewDepositosPorIdentificarScreen(),
+
       },
     );
   }
