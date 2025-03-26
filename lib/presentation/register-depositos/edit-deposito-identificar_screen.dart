@@ -65,10 +65,18 @@ class _EditDepositoScreenState extends State<EditDepositoScreen> {
     {'value': 'USD', 'label': 'Dólares'},
   ];
 
+  // Added to track if the totals are valid
+  bool _isTotalValid = true;
+  String? _validationMessage;
+
   @override
   void initState() {
     super.initState();
     _initializeData();
+    
+    // Add listeners to validate in real-time
+    _importeController.addListener(_validarTotales);
+    _aCuentaController.addListener(_validarTotales);
   }
   
   Future<void> _initializeData() async {
@@ -118,6 +126,8 @@ class _EditDepositoScreenState extends State<EditDepositoScreen> {
   
   @override
   void dispose() {
+    _importeController.removeListener(_validarTotales);
+    _aCuentaController.removeListener(_validarTotales);
     _importeController.dispose();
     _aCuentaController.dispose();
     _notesResetTimer?.cancel();
@@ -300,10 +310,23 @@ class _EditDepositoScreenState extends State<EditDepositoScreen> {
     return totalNotas + aCuenta;
   }
   
-  // Update importe field with calculated total
-  void _actualizarImporteTotal() {
-    final total = _calcularTotalGeneral();
-    _importeController.text = total.toStringAsFixed(2);
+  // Update validation state - replaces _actualizarImporteTotal
+  void _validarTotales() {
+    final totalCalculado = _calcularTotalGeneral();
+    final importeTotal = double.tryParse(_importeController.text) ?? 0.0;
+    
+    // Check if the difference is more than a small rounding error
+    final bool isValid = (importeTotal - totalCalculado).abs() <= 0.01;
+    
+    setState(() {
+      _isTotalValid = isValid;
+      if (!isValid) {
+        final diff = (importeTotal - totalCalculado).abs();
+        _validationMessage = 'La sumatoria de notas y a cuenta debe ser igual al importe (diferencia: ${diff.toStringAsFixed(2)})';
+      } else {
+        _validationMessage = null;
+      }
+    });
   }
   
   // Helper to format currency values
@@ -331,7 +354,8 @@ class _EditDepositoScreenState extends State<EditDepositoScreen> {
           onSave: (selectedItems) {
             setState(() {
               _notasRemisionSeleccionadas = selectedItems;
-              _actualizarImporteTotal();
+              // Validate totals after notes selection changes
+              _validarTotales();
             });
           },
         );
@@ -457,11 +481,8 @@ class _EditDepositoScreenState extends State<EditDepositoScreen> {
         try {
           // Set deposit ID in each note before saving
           nota.idDeposito = depositoId;
-          
           // Add required user info if missing
-          if (nota.audUsuario == null) {
-            nota.audUsuario = user.codUsuario;
-          }
+          nota.audUsuario = user.codUsuario;
           
           // Ensure empresa is set
           if (nota.codEmpresaBosque == null && _empresaSeleccionada != null) {
@@ -841,6 +862,8 @@ class _EditDepositoScreenState extends State<EditDepositoScreen> {
           borderRadius: BorderRadius.circular(8),
         ),
         prefixIcon: const Icon(Icons.add_card),
+        // Show error if validation fails
+        errorText: _validationMessage,
       ),
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       validator: (value) {
@@ -853,10 +876,8 @@ class _EditDepositoScreenState extends State<EditDepositoScreen> {
         return null;
       },
       onChanged: (value) {
-        // Always update the total importe when "a cuenta" changes
-        setState(() {
-          _actualizarImporteTotal();
-        });
+        // Validate without updating importe
+        _validarTotales();
       },
     );
   }
@@ -865,32 +886,48 @@ class _EditDepositoScreenState extends State<EditDepositoScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Importe Total (Calculado)', style: TextStyle(fontSize: 12, color: Colors.grey)),
+        const Text('Importe Total', style: TextStyle(fontSize: 12, color: Colors.grey)),
         const SizedBox(height: 4),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.teal.shade50,
-            border: Border.all(color: Colors.teal.shade300),
+            color: Colors.white,
+            border: Border.all(
+              color: _isTotalValid ? Colors.teal.shade300 : Colors.red.shade300,
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Row(
-            children: [
-              const Icon(Icons.attach_money, color: Colors.teal),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  _importeController.text,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-              const Icon(Icons.lock_outline, color: Colors.teal),
-            ],
+          child: TextFormField(
+            controller: _importeController,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: _isTotalValid ? Colors.teal.shade700 : Colors.red.shade700,
+            ),
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.attach_money),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.zero,
+            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (value) {
+              // Validate whenever importe changes
+              _validarTotales();
+            },
           ),
         ),
+        if (!_isTotalValid)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 12),
+            child: Text(
+              _validationMessage!,
+              style: TextStyle(
+                color: Colors.red.shade700,
+                fontSize: 12,
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -1017,7 +1054,7 @@ class _EditDepositoScreenState extends State<EditDepositoScreen> {
           'Guardar Cambios',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
-        onPressed: _isLoading ? null : _guardarDeposito,
+        onPressed: _isLoading || !_isTotalValid ? null : _guardarDeposito,
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),
           backgroundColor: Colors.teal,
@@ -1025,6 +1062,9 @@ class _EditDepositoScreenState extends State<EditDepositoScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
+          // Disabled state styling
+          disabledBackgroundColor: Colors.grey.shade400,
+          disabledForegroundColor: Colors.white,
         ),
       ),
     );

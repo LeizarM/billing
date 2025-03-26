@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:io';
-import 'dart:typed_data';
 import 'package:billing/presentation/register-depositos/edit-deposito-identificar_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -9,12 +7,13 @@ import 'package:billing/domain/register-depositos/register-depositos_repository.
 import 'package:billing/application/register-depositos/register-depositvos_service.dart';
 import 'package:billing/domain/register-depositos/Empresa.dart';
 import 'package:billing/domain/register-depositos/SocioNegocio.dart';
-import 'package:billing/domain/register-depositos/BancoXCuenta.dart';
+
 import 'package:billing/domain/register-depositos/NotaRemision.dart';
-import 'package:billing/utils/image_picker_helper.dart';
-import 'package:image_picker/image_picker.dart';
+
+
 
 // High-performance direct search client component
+
 class ClienteSearchField extends StatefulWidget {
   final DepositoRepository repository;
   final Empresa? empresa;
@@ -475,31 +474,11 @@ class _ViewDepositosPorIdentificarScreenState
   final TextEditingController _startDateController = TextEditingController();
   final TextEditingController _endDateController = TextEditingController();
   
-  // Add state variables for the edit dialog
-  List<Empresa> _empresas = [];
-  List<SocioNegocio> _socios = [];
-  List<BancoXCuenta> _bancos = [];
-  List<NotaRemision> _notasRemision = [];
-  List<NotaRemision> _notasRemisionSeleccionadas = [];
-  
-  Empresa? _empresaSeleccionada;
-  SocioNegocio? _socioSeleccionado;
-  BancoXCuenta? _bancoSeleccionado;
-  bool _loadingSocios = false;
-  bool _loadingNotasRemision = false;
-  
-  // For image handling
-  Uint8List? _imageBytes;
-  
+
   // For amount handling
   final TextEditingController _importeController = TextEditingController();
   final TextEditingController _aCuentaController = TextEditingController(text: '0.00');
-  String _monedaSeleccionada = 'BS';
   
-  final List<Map<String, String>> _monedas = [
-    {'value': 'BS', 'label': 'Bolivianos'},
-    {'value': 'USD', 'label': 'Dólares'},
-  ];
   
   // Add date state variables
   late DateTime _startDate;
@@ -519,8 +498,7 @@ class _ViewDepositosPorIdentificarScreenState
     _startDateController.text = _formatDate(_startDate);
     _endDateController.text = _formatDate(_endDate);
     
-    // Load initial data for edit dialog
-    _cargarDatosIniciales();
+    
   }
   
   @override
@@ -535,111 +513,8 @@ class _ViewDepositosPorIdentificarScreenState
     super.dispose();
   }
   
-  // Load initial data (companies)
-  Future<void> _cargarDatosIniciales() async {
-    try {
-      final empresasResult = await _depositoRepository.getEmpresas();
-      setState(() {
-        _empresas = empresasResult;
-      });
-    } catch (e) {
-      _mostrarError('Error al cargar datos iniciales: $e');
-    }
-  }
   
-  // Load banks based on selected company
-  Future<void> _cargarBancos(int codEmpresa) async {
-    // Cancel any existing auto-reset timer
-    _bankResetTimer?.cancel();
-    
-    print('🏦 Loading banks for company $codEmpresa'); // Debug log
-    
-    // Clear the current bank list and selection before loading new ones
-    setState(() {
-      _isLoading = true;
-      _bancos = []; // Clear existing banks immediately
-      _bancoSeleccionado = null; // Reset selection
-    });
-    
-    // Set up a safety timeout to force reset loading state after 8 seconds
-    _bankResetTimer = Timer(const Duration(seconds: 8), () {
-      if (mounted && _isLoading) {
-        print('⚠️ Force resetting bank loading state after timeout'); // Debug log
-        setState(() => _isLoading = false);
-      }
-    });
-    
-    try {
-      final bancosResult = await _depositoRepository.getBancos(codEmpresa);
-      
-      print('✅ Banks loaded: ${bancosResult.length}'); // Debug log
-      
-      // Always ensure we update the state properly
-      if (mounted) {
-        setState(() {
-          _bancos = bancosResult;
-          _isLoading = false; // Explicitly set to false
-          print('💾 State updated with banks: ${_bancos.length}');
-        });
-      }
-    } catch (e) {
-      print('❌ Error loading banks: $e'); // Debug log
-      _mostrarError('Error al cargar bancos: $e');
-      
-      // Ensure loading state is reset even on errors
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-  
-  // Load remission notes based on selected company and client with improved error handling
-  Future<void> _cargarNotasRemision(int codEmpresa, String codCliente) async {
-    // Cancel any existing auto-reset timer
-    _notesResetTimer?.cancel();
-    
-    print('⬇️ Starting to load notes for client $codCliente'); // Debug log
-    
-    // IMPORTANT: Always reset state at the beginning
-    setState(() => _loadingNotasRemision = true);
-    
-    // Set up a safety timeout to force reset loading state after 8 seconds
-    _notesResetTimer = Timer(const Duration(seconds: 8), () {
-      if (mounted && _loadingNotasRemision) {
-        print('⚠️ Force resetting notes loading state after timeout'); // Debug log
-        setState(() => _loadingNotasRemision = false);
-      }
-    });
-    
-    try {
-      final notasResult = await _depositoRepository.getNotasRemision(
-        codEmpresa,
-        codCliente,
-      );
-      
-      print('✅ Notes loaded: ${notasResult.length}'); // Debug log
-      
-      // Always ensure we update the state after loading, regardless of result
-      if (mounted) {
-        setState(() {
-          _notasRemision = notasResult;
-          _notasRemisionSeleccionadas = [];
-          _loadingNotasRemision = false; // Explicitly set to false
-        });
-      }
-      
-    } catch (e) {
-      print('❌ Error loading notes: $e'); // Debug log
-      _mostrarError('Error al cargar notas de remisión: $e');
-      
-      // Ensure loading state is reset even on errors
-      if (mounted) {
-        setState(() => _loadingNotasRemision = false);
-      }
-    }
-  }
-  
-  // Helper to show error messages
+  // Load banks based on selected company // Helper to show error messages
   void _mostrarError(String mensaje) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(mensaje), backgroundColor: Colors.red),
@@ -662,59 +537,8 @@ class _ViewDepositosPorIdentificarScreenState
     );
   }
   
-  // Image picker methods
-  Future<void> _pickImage() async {
-    try {
-      final result = await ImagePickerHelper.pickImage();
-      if (result != null) {
-        setState(() {
-          _imageBytes = result.bytes;
-        });
-      }
-    } catch (e) {
-      _mostrarError('Error al seleccionar imagen: $e');
-    }
-  }
   
-  Future<void> _pickImageFromCamera() async {
-    try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 80,
-      );
-      
-      if (image != null) {
-        final bytes = await image.readAsBytes();
-        setState(() {
-          _imageBytes = bytes;
-        });
-      }
-    } catch (e) {
-      _mostrarError('Error al capturar imagen: $e');
-    }
-  }
-  
-  // Calculate total from selected notes
-  double _calcularTotalNotasSeleccionadas() {
-    if (_notasRemisionSeleccionadas.isEmpty) return 0.0;
-    return _notasRemisionSeleccionadas.fold(
-      0.0, (sum, nota) => sum + (nota.saldoPendiente ?? 0.0));
-  }
-  
-  // Calculate total including "a cuenta"
-  double _calcularTotalGeneral() {
-    double totalNotas = _calcularTotalNotasSeleccionadas();
-    double aCuenta = double.tryParse(_aCuentaController.text) ?? 0.0;
-    return totalNotas + aCuenta;
-  }
-  
-  // Update importe field with calculated total
-  void _actualizarImporteTotal() {
-    final total = _calcularTotalGeneral();
-    _importeController.text = total.toStringAsFixed(2);
-  }
-  
+
   // Helper method to format dates consistently
   String _formatDate(DateTime date) {
     return DateFormat('dd/MM/yyyy').format(date);
@@ -971,16 +795,6 @@ class _ViewDepositosPorIdentificarScreenState
     return formatter.format(amount);
   }
   
-  // Helper to format deposit dates
-  String _formatDepositDate(String? dateStr) {
-    if (dateStr == null || dateStr.isEmpty) return '-';
-    try {
-      final date = DateTime.parse(dateStr);
-      return DateFormat('dd/MM/yyyy').format(date);
-    } catch (e) {
-      return dateStr; // Return the original string if parsing fails
-    }
-  }
   
   // Custom widget for estado indicator
   Widget _buildEstadoIndicator(String? estado) {
@@ -1071,201 +885,7 @@ class _ViewDepositosPorIdentificarScreenState
     );
   }
 
-  // Nota de remision selector dialog
-  void _showNotaRemisionSelector(BuildContext context, StateSetter setState, Function(Function()) setLocalState) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return _NotaRemisionSelectorModal(
-          notas: _notasRemision,
-          selectedNotas: List.from(_notasRemisionSeleccionadas),
-          onSave: (selectedItems) {
-            setLocalState(() {
-              _notasRemisionSeleccionadas = selectedItems;
-              _actualizarImporteTotal();
-            });
-            setState(() {});  // Update dialog state
-          },
-        );
-      },
-    );
-  }
-  
-  Widget _buildDepositInfoSection([DepositoCheque? deposito]) {
-    // Fix GridView layout issues
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Información del Depósito',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            // Replace GridView with more predictable layout
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text('ID Depósito: ${deposito?.idDeposito ?? '-'}'),
-                    ),
-                    Expanded(
-                      child: Text('Banco: ${deposito?.nombreBanco ?? '-'}'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Importe: ${deposito != null ? _formatCurrency(deposito.importe) : '-'} ${deposito?.moneda ?? ''}',
-                      ),
-                    ),
-                    
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildClientFormSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Información del Cliente',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        decoration: const InputDecoration(
-                          labelText: 'Código Cliente',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        decoration: const InputDecoration(
-                          labelText: 'Nombre Cliente',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        decoration: const InputDecoration(
-                          labelText: 'Empresa',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        decoration: const InputDecoration(
-                          labelText: 'Banco',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDocumentsTable() {
-    // Limit table height to prevent layout issues
-    return SizedBox(
-      width: double.infinity,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Documentos Disponibles',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 150, // Fixed height for table container
-            child: SingleChildScrollView(
-              scrollDirection: Axis.vertical,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  columns: const [
-                    DataColumn(label: Text('Seleccionar')),
-                    DataColumn(label: Text('Número Doc')),
-                    DataColumn(label: Text('Num. Factura')),
-                    DataColumn(label: Text('Fecha')),
-                    DataColumn(label: Text('Total')),
-                    DataColumn(label: Text('Saldo')),
-                  ],
-                  rows: const [],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTotalsSection([DepositoCheque? deposito]) {
-    final String importeStr = deposito != null ? _formatCurrency(deposito.importe) : '-';
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Resumen de Importes',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
-        Row(
-          children: const [
-            Expanded(child: Text('Total Documentos:')),
-            Text('-'),
-          ],
-        ),
-        Row(
-          children: [
-            const Expanded(child: Text('A Cuenta:')),
-            Text(deposito != null ? _formatCurrency(deposito.aCuenta) : '-'), // Fixed property name from aCuenta to acuenta
-          ],
-        ),
-        Row(
-          children: [
-            const Expanded(child: Text('Importe del Depósito:')),
-            Text('$importeStr ${deposito?.moneda ?? ''}'),
-          ],
-        ),
-      ],
-    );
-  }
 }
-
 // Nota remision selector modal component
 class _NotaRemisionSelectorModal extends StatefulWidget {
   final List<NotaRemision> notas;
