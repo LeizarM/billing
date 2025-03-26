@@ -30,7 +30,7 @@ class EditDepositoScreen extends StatefulWidget {
 
 class _EditDepositoScreenState extends State<EditDepositoScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final DepositoRepository _depositoRepository = DepositoRepositoryImpl();
+  final DepositoRepositoryImpl _depositoRepository = DepositoRepositoryImpl();
   final LocalStorageService _localStorageService = LocalStorageService();
   
   // Status variables
@@ -279,16 +279,11 @@ class _EditDepositoScreenState extends State<EditDepositoScreen> {
   
   Future<void> _pickImageFromCamera() async {
     try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 80,
-      );
+      final result = await ImagePickerHelper.captureImage(imageQuality: 80);
       
-      if (image != null) {
-        final bytes = await image.readAsBytes();
+      if (result != null) {
         setState(() {
-          _imageBytes = bytes;
+          _imageBytes = result.bytes;
         });
       }
     } catch (e) {
@@ -425,37 +420,19 @@ class _EditDepositoScreenState extends State<EditDepositoScreen> {
         aCuenta: double.parse(_aCuentaController.text),
       );
       
-      // Convert image bytes to file if present
-      File? imageFile;
-      if (_imageBytes != null) {
-        final tempDir = await Directory.systemTemp.createTemp();
-        final tempFile = File('${tempDir.path}/temp_image.jpg');
-        await tempFile.writeAsBytes(_imageBytes!);
-        imageFile = tempFile;
-      } else if (widget.deposito.idDeposito == null) {
-        // If it's a new deposit, we need an image file
+      // Check if we need an image
+      if (_imageBytes == null && widget.deposito.idDeposito == null) {
+        // If it's a new deposit, we need an image
         _mostrarError('Debe seleccionar una imagen del comprobante de depósito');
         setState(() => _isLoading = false);
         return;
       }
       
-      // Validate that importe equals the sum of notes and a cuenta
-      double totalNotas = _calcularTotalNotasSeleccionadas();
-      double aCuenta = double.tryParse(_aCuentaController.text) ?? 0.0;
-      double importeTotal = double.tryParse(_importeController.text) ?? 0.0;
-      double expectedTotal = totalNotas + aCuenta;
-      
-      // Check if there's a mismatch between expected total and importe
-      if ((importeTotal - expectedTotal).abs() > 0.01) { // Allow small rounding differences
-        _mostrarError('El importe total debe ser exactamente igual a la suma de notas seleccionadas más el monto a cuenta');
-        setState(() => _isLoading = false);
-        return;
-      }
-      
-      // Register or update the deposit
+      // Register or update the deposit - pass the image bytes directly
+      // This works for both web and mobile platforms
       final exito = await _depositoRepository.registrarDeposito(
         depositoActualizado,
-        imageFile!,
+        _imageBytes,
       );
       
       if (!exito) {
@@ -889,32 +866,39 @@ class _EditDepositoScreenState extends State<EditDepositoScreen> {
         const Text('Importe Total', style: TextStyle(fontSize: 12, color: Colors.grey)),
         const SizedBox(height: 4),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Colors.grey.shade50,  // Light gray background to indicate read-only
             border: Border.all(
               color: _isTotalValid ? Colors.teal.shade300 : Colors.red.shade300,
               width: 1.5,
             ),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: TextFormField(
-            controller: _importeController,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: _isTotalValid ? Colors.teal.shade700 : Colors.red.shade700,
-            ),
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.attach_money),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-            ),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onChanged: (value) {
-              // Validate whenever importe changes
-              _validarTotales();
-            },
+          child: Row(
+            children: [
+              Icon(
+                Icons.attach_money, 
+                color: _isTotalValid ? Colors.teal.shade700 : Colors.red.shade700
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _importeController.text,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: _isTotalValid ? Colors.teal.shade700 : Colors.red.shade700,
+                  ),
+                ),
+              ),
+              if (!_isTotalValid)
+                Icon(
+                  Icons.error_outline,
+                  color: Colors.red.shade700,
+                  size: 18,
+                ),
+            ],
           ),
         ),
         if (!_isTotalValid)
