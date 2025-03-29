@@ -763,7 +763,7 @@ class _ViewDepositosPorIdentificarScreenState
                           children: [
                             ElevatedButton.icon(
                               icon: const Icon(Icons.edit, size: 16),
-                              label: const Text('Editar'),
+                              label: const Text('Asignar Cliente'),
                               onPressed: () => _showEditDialog(deposito),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.blue,

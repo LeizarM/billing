@@ -11,7 +11,6 @@ import 'package:billing/domain/register-depositos/SocioNegocio.dart';
 import 'package:billing/domain/register-depositos/BancoXCuenta.dart';
 import 'package:billing/domain/register-depositos/NotaRemision.dart';
 import 'package:billing/utils/image_picker_helper.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:billing/application/auth/local_storage_service.dart';
 
 class EditDepositoScreen extends StatefulWidget {
@@ -35,7 +34,6 @@ class _EditDepositoScreenState extends State<EditDepositoScreen> {
   
   // Status variables
   bool _isLoading = false;
-  String _errorMessage = '';
   
   // Form fields
   List<Empresa> _empresas = [];
@@ -229,7 +227,6 @@ class _EditDepositoScreenState extends State<EditDepositoScreen> {
   // Helper to show error messages
   void _mostrarError(String mensaje) {
     setState(() {
-      _errorMessage = mensaje;
     });
     
     ScaffoldMessenger.of(context).showSnackBar(
@@ -394,7 +391,6 @@ class _EditDepositoScreenState extends State<EditDepositoScreen> {
     
     setState(() {
       _isLoading = true;
-      _errorMessage = '';
     });
     
     try {
@@ -1169,8 +1165,6 @@ class _DirectSearchDialogState extends State<_DirectSearchDialog> {
   bool _hasSearched = false;
   
   // Track recent selections for quick access
-  List<SocioNegocio> _recentSelections = [];
-  bool _showRecents = true;
   
   @override
   void initState() {
@@ -1181,7 +1175,6 @@ class _DirectSearchDialogState extends State<_DirectSearchDialog> {
   void _onSearchChanged() {
     if (_searchController.text.isEmpty) {
       setState(() {
-        _showRecents = true;
         _searchResults = [];
         _isSearching = false;
         _hasSearched = false;
@@ -1196,7 +1189,6 @@ class _DirectSearchDialogState extends State<_DirectSearchDialog> {
         _performSearch(query);
       } else {
         setState(() {
-          _showRecents = true;
           _searchResults = [];
           _hasSearched = false;
         });
@@ -1210,7 +1202,6 @@ class _DirectSearchDialogState extends State<_DirectSearchDialog> {
     setState(() {
       _isSearching = true;
       _errorMessage = '';
-      _showRecents = false;
     });
     
     try {
