@@ -204,43 +204,6 @@ class _ItemScreenState extends TokenAwareState<ItemsScreen> {
     );
   }
 
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Row(
-            children: const [
-              Icon(Icons.error_outline, color: AppTheme.errorColor),
-              SizedBox(width: 12),
-              Text('Error', style: TextStyle(fontSize: 18)),
-            ],
-          ),
-          content: Text(
-            message,
-            style: const TextStyle(fontSize: 15),
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(kBorderRadius),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text(
-                'Aceptar',
-                style: TextStyle(
-                  color: AppTheme.primaryColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   List<Map<String, dynamic>> _getGroupedItems(String codArticulo) {
     return _items

@@ -5,8 +5,7 @@ import 'package:billing/domain/item/item_repository.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
-class ArticuloPrecioDisponibleService
-    implements ArticuloPrecioDisponibleRepository {
+class ArticuloPrecioDisponibleService  implements ArticuloPrecioDisponibleRepository {
   final Dio _dio = Dio();
 
   final String _baseUrl = '${BASE_URL}paginaXApp';

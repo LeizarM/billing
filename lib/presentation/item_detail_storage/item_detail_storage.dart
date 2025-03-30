@@ -17,8 +17,7 @@ class ItemDetailStorgate extends StatefulWidget {
 }
 
 class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
-  final ArticuloPrecioDisponibleService _obtenerArticuloXAlmacen =
-      ArticuloPrecioDisponibleService();
+  final ArticuloPrecioDisponibleService _obtenerArticuloXAlmacen = ArticuloPrecioDisponibleService();
   final LocalStorageService _localStorageService = LocalStorageService();
   final NumberFormat numberFormat = NumberFormat("#,##0.00");
 
@@ -67,9 +66,7 @@ class _ItemDetailStorgateState extends State<ItemDetailStorgate> {
         }
 
         try {
-          final itemsXStorage = await _obtenerArticuloXAlmacen
-              .obtenerArticulosXAlmacen(codArticulo, _userData!.codCiudad)
-              .timeout(const Duration(seconds: 10));
+          final itemsXStorage = await _obtenerArticuloXAlmacen.obtenerArticulosXAlmacen(codArticulo, _userData!.codCiudad).timeout(const Duration(seconds: 10));
 
           groupedItemsData.putIfAbsent(codArticulo, () => []);
           for (var newItem in itemsXStorage) {
