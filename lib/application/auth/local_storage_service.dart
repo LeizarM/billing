@@ -40,7 +40,7 @@ class LocalStorageService {
 
   Future<int?> getCodEmpleado() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(KEY_COD_USUARIO);
+    return prefs.getInt(KEY_COD_EMPLEADO);
   }
 
   Future<void> clearUser() async {

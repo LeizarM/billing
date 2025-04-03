@@ -500,7 +500,16 @@ class _RegistrarDepositoPageState extends State<RegistrarDepositoPage> {
           _empresaSeleccionada = value;
           _socioSeleccionado = null;
           _bancoSeleccionado = null;
+          
+          // Reset the remission notes when company changes
+          _notasRemision = [];
+          _notasRemisionSeleccionadas = [];
+          
+          // Reset the amount fields
+          _importeController.text = '';
+          _aCuentaController.text = '0.00';
         });
+        
         if (value != null) {
           if (value.codEmpresa == 7) {
             _cargarSocios(1);

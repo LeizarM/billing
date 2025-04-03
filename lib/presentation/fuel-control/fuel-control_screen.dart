@@ -79,6 +79,7 @@ class _FuelControlScreenState extends State<FuelControlScreen> {
         kilometraje: double.tryParse(_kilometrajeController.text) ?? 0.0,
         obs: _obsController.text,
         idCoche: _selectedCar?.idCoche,
+        codEmpleado: await _localStorageService.getCodEmpleado(),
         audUsuario: await _localStorageService.getCodUsuario()
       );
       

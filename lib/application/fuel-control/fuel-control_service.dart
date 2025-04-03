@@ -47,7 +47,8 @@ class FuelControlService implements FuelControlRepository {
     }
   }
 
- Future<void> registerFuelControl(CombustibleControl fuelControl) async {
+ @override
+  Future<void> registerFuelControl(CombustibleControl fuelControl) async {
   String? token = await _localStorageService.getToken();
   try {
     // Imprimir el objeto que estás enviando para depuración
