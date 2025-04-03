@@ -758,22 +758,24 @@ class _ViewDepositosPorIdentificarScreenState
                       DataCell(_buildEstadoIndicator(deposito.esPendiente)),
                       DataCell(Text(deposito.obs ?? '-')),
                       DataCell(
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ElevatedButton.icon(
-                              icon: const Icon(Icons.edit, size: 16),
-                              label: const Text('Asignar Cliente'),
-                              onPressed: () => _showEditDialog(deposito),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                textStyle: const TextStyle(fontSize: 12),
+                        deposito.esPendiente?.toLowerCase().contains('verificado') == true
+                        ? const SizedBox() // Empty widget if verified
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ElevatedButton.icon(
+                                icon: const Icon(Icons.edit, size: 16),
+                                label: const Text('Asignar Cliente'),
+                                onPressed: () => _showEditDialog(deposito),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  textStyle: const TextStyle(fontSize: 12),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
                       ),
                     ],
                   );

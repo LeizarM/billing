@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:billing/infrastructure/register-depositos/file_picker_helper.dart';
+import 'package:billing/presentation/fuel-control/fuel-control_screen.dart';
 import 'package:billing/presentation/register-depositos/view-depositos-por-identificar_screen.dart';
 import 'package:billing/presentation/register-depositos/view-depositos_screen.dart';
 import 'package:flutter/material.dart';
@@ -106,6 +107,7 @@ class MyApp extends StatelessWidget {
         'tdep_Deposito/Registro': (context) => const  RegistrarDepositoPage(),
         'tdep_Deposito/View': (context) => const  ViewDepositosScreen(),
         'tdep_DepositoIde/View': (context) => const  ViewDepositosPorIdentificarScreen(),
+        'tgas_ControlCombustible/Registro': (context) => const  FuelControlScreen(),
 
       },
     );
